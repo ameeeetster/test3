@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, SquareCheck as CheckSquare, Users, Shield, FileCheck, TriangleAlert as AlertTriangle, ChartBar as BarChart3, Boxes, Settings, Menu, X, Sun, Moon, Search, Bell, ChevronDown, ScrollText } from 'lucide-react';
+import { LayoutDashboard, FileText, SquareCheck as CheckSquare, Users, Shield, FileCheck, TriangleAlert as AlertTriangle, ChartBar as BarChart3, Boxes, Settings, Menu, X, Sun, Moon, Search, Bell, ChevronDown, ScrollText, Repeat } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -27,6 +27,7 @@ const navItems: NavItem[] = [
   { name: 'Access', path: '/access/roles', icon: Shield, permission: 'view:roles' },
   { name: 'Reviews', path: '/reviews', icon: FileCheck, permission: 'view:reviews' },
   { name: 'Policies', path: '/policies', icon: ScrollText, permission: 'view:policies' },
+  { name: 'Lifecycle', path: '/lifecycle', icon: Repeat, permission: 'view:lifecycle' },
   { name: 'Risk', path: '/risk', icon: AlertTriangle, permission: 'view:risk' },
   { name: 'Reports', path: '/reports', icon: BarChart3, permission: 'view:reports' },
   { name: 'Integrations', path: '/integrations', icon: Boxes, permission: 'view:integrations' },

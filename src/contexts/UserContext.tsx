@@ -32,6 +32,8 @@ export type Permission =
   | 'manage:reviews'
   | 'view:policies'
   | 'manage:policies'
+  | 'view:lifecycle'
+  | 'manage:lifecycle'
   | 'view:risk'
   | 'manage:risk'
   | 'view:reports'
@@ -71,6 +73,8 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'manage:reviews',
     'view:policies',
     'manage:policies',
+    'view:lifecycle',
+    'manage:lifecycle',
     'view:risk',
     'manage:risk',
     'view:reports',
