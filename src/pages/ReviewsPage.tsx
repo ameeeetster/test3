@@ -188,48 +188,50 @@ export function ReviewsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <TabsList className="w-full lg:w-auto">
-            <TabsTrigger value="my-tasks" className="flex-1 lg:flex-none">
-              <Users className="w-4 h-4 mr-2" />
-              My Tasks
-              {!isAdmin && (
-                <Badge variant="secondary" className="ml-2">
-                  3
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex-1 lg:flex-none">
-              <Calendar className="w-4 h-4 mr-2" />
-              Campaigns
-              {isAdmin && (
-                <Badge variant="secondary" className="ml-2">
-                  3 Active
-                </Badge>
-              )}
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="templates" className="flex-1 lg:flex-none">
-                <Grid3x3 className="w-4 h-4 mr-2" />
-                Templates
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <TabsList className="inline-flex w-auto">
+              <TabsTrigger value="my-tasks">
+                <Users className="w-4 h-4 mr-2" />
+                My Tasks
+                {!isAdmin && (
+                  <Badge variant="secondary" className="ml-2">
+                    3
+                  </Badge>
+                )}
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="campaigns">
+                <Calendar className="w-4 h-4 mr-2" />
+                Campaigns
+                {isAdmin && (
+                  <Badge variant="secondary" className="ml-2">
+                    3 Active
+                  </Badge>
+                )}
+              </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="templates">
+                  <Grid3x3 className="w-4 h-4 mr-2" />
+                  Templates
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 lg:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-full lg:w-64"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 sm:flex-none sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full h-10"
+                />
+              </div>
+              <Button variant="outline" size="default" className="h-10">
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
             </div>
-            <Button variant="outline" size="default">
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
           </div>
         </div>
 
