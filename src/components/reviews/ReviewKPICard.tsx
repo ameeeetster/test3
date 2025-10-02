@@ -30,8 +30,8 @@ export function ReviewKPICard({ title, value, delta, sparkline, variant = 'defau
       } ${variantStyles[variant]}`}
       style={{ borderColor: variant === 'default' ? 'var(--border)' : undefined }}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{title}</p>
           <p className="text-3xl" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
             {value}
@@ -51,7 +51,7 @@ export function ReviewKPICard({ title, value, delta, sparkline, variant = 'defau
           )}
         </div>
         {sparkline && sparkline.length > 0 && (
-          <div className="ml-4">
+          <div className="flex-shrink-0">
             <MiniSparkline data={sparkline} variant={variant} />
           </div>
         )}
