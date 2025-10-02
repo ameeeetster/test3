@@ -30,28 +30,26 @@ export function ReviewKPICard({ title, value, delta, sparkline, variant = 'defau
       } ${variantStyles[variant]}`}
       style={{ borderColor: variant === 'default' ? 'var(--border)' : undefined }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{title}</p>
-          <p className="text-3xl" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
-            {value}
-          </p>
-          {delta && (
-            <div className="flex items-center gap-1 mt-2">
-              {delta.trend === 'up' ? (
-                <TrendingUp className="w-3.5 h-3.5 text-success" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5 text-danger" />
-              )}
-              <span className={`text-xs ${delta.trend === 'up' ? 'text-success' : 'text-danger'}`}>
-                {Math.abs(delta.value)}%
-              </span>
-              <span className="text-xs text-slate-500">vs last period</span>
-            </div>
-          )}
-        </div>
+      <div className="space-y-3">
+        <p className="text-sm text-slate-600 dark:text-slate-400">{title}</p>
+        <p className="text-3xl" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
+          {value}
+        </p>
+        {delta && (
+          <div className="flex items-center gap-1">
+            {delta.trend === 'up' ? (
+              <TrendingUp className="w-3.5 h-3.5 text-success" />
+            ) : (
+              <TrendingDown className="w-3.5 h-3.5 text-danger" />
+            )}
+            <span className={`text-xs ${delta.trend === 'up' ? 'text-success' : 'text-danger'}`}>
+              {Math.abs(delta.value)}%
+            </span>
+            <span className="text-xs text-slate-500">vs last period</span>
+          </div>
+        )}
         {sparkline && sparkline.length > 0 && (
-          <div className="flex-shrink-0">
+          <div className="pt-2 -mx-2">
             <MiniSparkline data={sparkline} variant={variant} />
           </div>
         )}
@@ -64,10 +62,14 @@ function MiniSparkline({ data, variant }: { data: number[]; variant: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  
+
+  const width = 100;
+  const height = 32;
+  const padding = 2;
+
   const points = data.map((value, i) => {
-    const x = (i / (data.length - 1)) * 60;
-    const y = 24 - ((value - min) / range) * 24;
+    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
+    const y = padding + (height - padding * 2) - ((value - min) / range) * (height - padding * 2);
     return `${x},${y}`;
   }).join(' ');
 
@@ -79,14 +81,15 @@ function MiniSparkline({ data, variant }: { data: number[]; variant: string }) {
   }[variant];
 
   return (
-    <svg width="60" height="24" className="opacity-90">
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="opacity-80">
       <polyline
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
