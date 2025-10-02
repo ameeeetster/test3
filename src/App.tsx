@@ -21,6 +21,7 @@ import { ReviewsPage } from './pages/ReviewsPage';
 import { ReviewsWorkbenchPage } from './pages/ReviewsWorkbenchPage';
 import { CreateReviewWizard } from './components/reviews/CreateReviewWizard';
 import { ReportsPage } from './pages/ReportsPage';
+import { PoliciesPage } from './pages/PoliciesPage';
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="/reviews/:campaignId/workbench" element={<ReviewsWorkbenchPage />} />
                 <Route path="/risk" element={<RiskPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/policies" element={<PoliciesPage />} />
                 <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/integrations/new" element={<AddIntegrationWizard onClose={() => window.location.href = '/integrations'} />} />
                 <Route path="/integrations/:id" element={<IntegrationDetailPage />} />
