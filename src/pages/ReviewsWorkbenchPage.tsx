@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Filter, Sparkles, ChevronRight, Keyboard } from 'lucide-react';
+import { ArrowLeft, ListFilter as Filter, Sparkles, ChevronRight, Keyboard } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Progress } from '../components/ui/progress';
