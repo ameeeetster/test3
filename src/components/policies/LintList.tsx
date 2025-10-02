@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { CheckCircle2, AlertTriangle, XCircle, ChevronRight } from 'lucide-react';
+import { CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, Circle as XCircle, ChevronRight } from 'lucide-react';
 
 interface LintResult {
   roleName: string;

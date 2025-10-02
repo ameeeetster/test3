@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../ui/badge';
-import { FileText, Eye, CheckCircle2 } from 'lucide-react';
+import { FileText, Eye, CircleCheck as CheckCircle2 } from 'lucide-react';
 
 interface VersionBadgeProps {
   status: 'draft' | 'published';

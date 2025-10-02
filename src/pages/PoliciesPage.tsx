@@ -17,22 +17,7 @@ import { TestResultsTable } from '../components/policies/TestResultsTable';
 import { LintList } from '../components/policies/LintList';
 import { RiskWeightSlider } from '../components/policies/RiskWeightSlider';
 import { VersionBadge } from '../components/policies/VersionBadge';
-import {
-  Plus,
-  Upload,
-  Download,
-  GitBranch,
-  Shield,
-  Award,
-  AlertTriangle,
-  Zap,
-  Clock,
-  Settings,
-  Play,
-  Eye,
-  ChevronDown,
-  FileJson
-} from 'lucide-react';
+import { Plus, Upload, Download, GitBranch, Shield, Award, TriangleAlert as AlertTriangle, Zap, Clock, Settings, Play, Eye, ChevronDown, FileJson } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface Section {

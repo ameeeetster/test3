@@ -2,7 +2,7 @@ import React from 'react';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
-import { HelpCircle } from 'lucide-react';
+import { CircleHelp as HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface RiskWeight {

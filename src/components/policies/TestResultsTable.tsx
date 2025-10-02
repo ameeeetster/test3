@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, ExternalLink } from 'lucide-react';
 
 interface Violation {
   userId: string;
