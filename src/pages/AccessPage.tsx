@@ -23,11 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { toast } from 'sonner@2.0.3';
-import { 
-  Plus, Search, Filter, Download, Upload, MoreVertical, 
-  Shield, Users, Package, AlertTriangle, TrendingUp, TrendingDown,
-  Calendar, Settings, Edit, UserPlus, Trash2, Eye, GitBranch, XCircle, ClipboardList, ChevronDown, ChevronRight
-} from 'lucide-react';
+import { Plus, Search, ListFilter as Filter, Download, Upload, MoveVertical as MoreVertical, Shield, Users, Package, TriangleAlert as AlertTriangle, TrendingUp, TrendingDown, Calendar, Settings, CreditCard as Edit, UserPlus, Trash2, Eye, GitBranch, Circle as XCircle, ClipboardList, ChevronDown, ChevronRight } from 'lucide-react';
 
 // Mock data
 const kpiData = [
