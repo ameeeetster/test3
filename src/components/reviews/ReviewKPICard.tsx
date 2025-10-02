@@ -25,7 +25,7 @@ export function ReviewKPICard({ title, value, delta, sparkline, variant = 'defau
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`rounded-xl border bg-white dark:bg-slate-900 p-5 transition-all text-left w-full ${
+      className={`rounded-xl border bg-slate-50 dark:bg-slate-800 p-5 transition-all text-left w-full shadow-sm ${
         onClick ? 'hover:shadow-md hover:scale-[1.02] cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50' : 'hover:shadow-sm'
       } ${variantStyles[variant]}`}
       style={{ borderColor: variant === 'default' ? 'var(--border)' : undefined }}
@@ -79,12 +79,12 @@ function MiniSparkline({ data, variant }: { data: number[]; variant: string }) {
   }[variant];
 
   return (
-    <svg width="60" height="24" className="opacity-60">
+    <svg width="60" height="24" className="opacity-90">
       <polyline
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
