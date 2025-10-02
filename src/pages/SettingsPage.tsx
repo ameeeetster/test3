@@ -19,37 +19,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, Dr
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { toast } from 'sonner@2.0.3';
-import {
-  Building2,
-  Shield,
-  FileText,
-  Workflow,
-  Sparkles,
-  Bell,
-  Palette,
-  Code,
-  Database,
-  Users,
-  FileSearch,
-  AlertTriangle,
-  Search,
-  Copy,
-  Check,
-  Plus,
-  Trash2,
-  Edit,
-  Play,
-  RotateCcw,
-  Eye,
-  Mail,
-  MessageSquare,
-  Webhook,
-  Key,
-  Globe,
-  Settings,
-  ChevronRight,
-  X
-} from 'lucide-react';
+import { Building2, Shield, FileText, Workflow, Sparkles, Bell, Palette, Code, Database, Users, FileSearch, TriangleAlert as AlertTriangle, Search, Copy, Check, Plus, Trash2, CreditCard as Edit, Play, RotateCcw, Eye, Mail, MessageSquare, Webhook, Key, Globe, Settings, ChevronRight, X, Download } from 'lucide-react';
 
 const sections = [
   { id: 'organization', label: 'Organization', icon: Building2 },
