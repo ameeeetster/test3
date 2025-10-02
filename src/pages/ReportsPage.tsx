@@ -13,23 +13,7 @@ import { RiskChip } from '../components/RiskChip';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
-import {
-  Plus,
-  Calendar,
-  Download,
-  Search,
-  Filter,
-  Grid3x3,
-  List,
-  Sparkles,
-  Play,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  RotateCcw,
-  Database,
-  FileText
-} from 'lucide-react';
+import { Plus, Calendar, Download, Search, ListFilter as Filter, Grid3x3, List, Sparkles, Play, TrendingUp, TrendingDown, TriangleAlert as AlertTriangle, RotateCcw, Database, FileText } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const kpiData = [

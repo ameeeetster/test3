@@ -4,7 +4,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Play, Edit, Share2, Calendar, Download, MoreVertical, Clock } from 'lucide-react';
+import { Play, CreditCard as Edit, Share2, Calendar, Download, MoveVertical as MoreVertical, Clock } from 'lucide-react';
 
 interface ReportCardProps {
   name: string;
