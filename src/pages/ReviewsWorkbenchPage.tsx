@@ -241,9 +241,9 @@ export function ReviewsWorkbenchPage() {
       >
         <div className="h-full max-w-[1320px] mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/reviews')} className="lg:flex hidden">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+            <Button variant="ghost" size="sm" onClick={() => navigate('/reviews')}>
+              <ArrowLeft className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Back</span>
             </Button>
             <Button
               variant="ghost"
