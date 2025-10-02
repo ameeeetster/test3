@@ -1,7 +1,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
-import { AlertTriangle, Check } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, Check } from 'lucide-react';
 
 export interface AttributeMapping {
   sourceField: string;

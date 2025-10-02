@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { CheckCircle2, XCircle, AlertTriangle, Clock, Play } from 'lucide-react';
+import { CircleCheck as CheckCircle2, Circle as XCircle, TriangleAlert as AlertTriangle, Clock, Play } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface SimulationResult {

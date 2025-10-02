@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '../ui/badge';
-import { FileText, TestTube, CheckCircle2 } from 'lucide-react';
+import { FileText, TestTube, CircleCheck as CheckCircle2 } from 'lucide-react';
 
 interface RuleStatusBadgeProps {
   status: 'draft' | 'test' | 'published';

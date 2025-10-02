@@ -15,17 +15,7 @@ import { MappingTable, AttributeMapping } from '../components/lifecycle/MappingR
 import { SimulationDrawer } from '../components/lifecycle/SimulationDrawer';
 import { PriorityList, LifecycleRule } from '../components/lifecycle/PriorityList';
 import { RuleStatusBadge } from '../components/lifecycle/RuleStatusBadge';
-import {
-  Plus,
-  Play,
-  Database,
-  UserPlus,
-  UserCog,
-  UserMinus,
-  AlertTriangle,
-  Calendar,
-  Settings
-} from 'lucide-react';
+import { Plus, Play, Database, UserPlus, UserCog, UserMinus, TriangleAlert as AlertTriangle, Calendar, Settings } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface Section {
