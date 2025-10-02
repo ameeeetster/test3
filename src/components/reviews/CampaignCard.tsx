@@ -54,7 +54,7 @@ export function CampaignCard({
 
   return (
     <div
-      className="rounded-xl border border-border bg-white dark:bg-slate-900 p-5 hover:shadow-md transition-all cursor-pointer"
+      className="rounded-xl border border-border bg-slate-50 dark:bg-slate-800 p-5 hover:shadow-md transition-all cursor-pointer shadow-sm"
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-4">

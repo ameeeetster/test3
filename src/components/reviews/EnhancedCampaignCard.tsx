@@ -101,7 +101,7 @@ export function EnhancedCampaignCard({
 
   return (
     <div
-      className={`rounded-xl border bg-white dark:bg-slate-900 p-5 transition-all duration-150 ${
+      className={`rounded-xl border bg-slate-50 dark:bg-slate-800 p-5 transition-all duration-150 shadow-sm ${
         isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:shadow-md'
       }`}
     >
