@@ -4679,7 +4679,7 @@
   --info-border: #e0e7ff;
   --background: #fff;
   --foreground: #0f172a;
-  --card: #fff;
+  --card: #f8fafc;
   --card-foreground: #0f172a;
   --popover: #fff;
   --popover-foreground: #0f172a;
@@ -4797,7 +4797,7 @@
   --info-border: #1e3a8a66;
   --background: #0a0e1a;
   --foreground: #f1f5f9;
-  --card: #111827;
+  --card: #1e293b;
   --card-foreground: #f1f5f9;
   --popover: #1f2937;
   --popover-foreground: #f1f5f9;
