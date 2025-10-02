@@ -73,20 +73,18 @@ export function AIAssistPanel({ recommendations, onApplyAll, onFilterRisky, onPr
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 h-7 text-xs"
+                className="flex-1 h-7 text-xs px-2"
                 onClick={() => onPreview?.(rec)}
               >
-                <Eye className="w-3 h-3 mr-1" />
-                Preview
+                <Eye className="w-3 h-3" />
               </Button>
               <Button
                 variant="default"
                 size="sm"
-                className="flex-1 h-7 text-xs"
+                className="flex-1 h-7 text-xs px-2"
                 onClick={() => onApply?.(rec)}
               >
-                <Check className="w-3 h-3 mr-1" />
-                Apply
+                <Check className="w-3 h-3" />
               </Button>
             </div>
           </div>
