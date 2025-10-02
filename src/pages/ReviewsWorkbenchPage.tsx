@@ -313,13 +313,20 @@ export function ReviewsWorkbenchPage() {
             >
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-sm">Subjects ({subjects.length})</h3>
+                  <h3 className="font-semibold text-sm">
+                    Subjects ({filteredSubjects.length})
+                    {filteredSubjects.length !== subjects.length && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">
+                        of {subjects.length}
+                      </span>
+                    )}
+                  </h3>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                     <Filter className="w-3.5 h-3.5" />
                   </Button>
                 </div>
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search by name or dept..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-8 text-sm"
@@ -329,25 +336,31 @@ export function ReviewsWorkbenchPage() {
                 className="overflow-y-auto"
                 style={{ maxHeight: `calc(100vh - ${TOP_OFFSET + 24 + 88}px)` }}
               >
-                {filteredSubjects.map((subject, index) => {
-                  const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
-                  return (
-                    <SubjectCard
-                      key={subject.id}
-                      name={subject.name}
-                      department={subject.dept}
-                      risk={subject.risk}
-                      total={subject.items.length}
-                      reviewed={reviewed}
-                      isActive={index === currentIndex}
-                      onClick={() => {
-                        setCurrentIndex(index);
-                        setShowSubjectsDrawer(false);
-                      }}
-                      slaRemaining={subject.slaRemaining}
-                    />
-                  );
-                })}
+                {filteredSubjects.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No subjects match your search
+                  </div>
+                ) : (
+                  filteredSubjects.map((subject, index) => {
+                    const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
+                    return (
+                      <SubjectCard
+                        key={subject.id}
+                        name={subject.name}
+                        department={subject.dept}
+                        risk={subject.risk}
+                        total={subject.items.length}
+                        reviewed={reviewed}
+                        isActive={index === currentIndex}
+                        onClick={() => {
+                          setCurrentIndex(index);
+                          setShowSubjectsDrawer(false);
+                        }}
+                        slaRemaining={subject.slaRemaining}
+                      />
+                    );
+                  })
+                )}
               </div>
             </div>
           </aside>
@@ -366,38 +379,51 @@ export function ReviewsWorkbenchPage() {
                 <div className="h-full flex flex-col">
                   <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-sm">Subjects ({subjects.length})</h3>
+                      <h3 className="font-semibold text-sm">
+                        Subjects ({filteredSubjects.length})
+                        {filteredSubjects.length !== subjects.length && (
+                          <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">
+                            of {subjects.length}
+                          </span>
+                        )}
+                      </h3>
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                         <Filter className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                     <Input
-                      placeholder="Search..."
+                      placeholder="Search by name or dept..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="flex-1 overflow-y-auto">
-                    {filteredSubjects.map((subject, index) => {
-                      const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
-                      return (
-                        <SubjectCard
-                          key={subject.id}
-                          name={subject.name}
-                          department={subject.dept}
-                          risk={subject.risk}
-                          total={subject.items.length}
-                          reviewed={reviewed}
-                          isActive={index === currentIndex}
-                          onClick={() => {
-                            setCurrentIndex(index);
-                            setShowSubjectsDrawer(false);
-                          }}
-                          slaRemaining={subject.slaRemaining}
-                        />
-                      );
-                    })}
+                    {filteredSubjects.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                        No subjects match your search
+                      </div>
+                    ) : (
+                      filteredSubjects.map((subject, index) => {
+                        const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
+                        return (
+                          <SubjectCard
+                            key={subject.id}
+                            name={subject.name}
+                            department={subject.dept}
+                            risk={subject.risk}
+                            total={subject.items.length}
+                            reviewed={reviewed}
+                            isActive={index === currentIndex}
+                            onClick={() => {
+                              setCurrentIndex(index);
+                              setShowSubjectsDrawer(false);
+                            }}
+                            slaRemaining={subject.slaRemaining}
+                          />
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </aside>
