@@ -596,6 +596,12 @@ export function ReviewsWorkbenchPage() {
                     onFilterRisky={() => {
                       toast.info('Filtered to show risky/unused items only');
                     }}
+                    onPreview={(rec) => {
+                      toast.info(`Previewing ${rec.itemCount} items for: ${rec.type}`);
+                    }}
+                    onApply={(rec) => {
+                      toast.success(`Applied ${rec.type} recommendation to ${rec.itemCount} items`);
+                    }}
                   />
                 </div>
               </div>
