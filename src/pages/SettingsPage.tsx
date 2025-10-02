@@ -21,6 +21,7 @@ import { CardMetadata } from '../components/settings/CardMetadata';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '../components/ui/drawer';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
+import { AuthenticationTab } from './settings/AuthenticationTab';
 import { toast } from 'sonner@2.0.3';
 import { Building2, Shield, FileText, Workflow, Sparkles, Bell, Palette, Code, Database, Users, FileSearch, TriangleAlert as AlertTriangle, Search, Copy, Check, Plus, Trash2, CreditCard as Edit, Play, RotateCcw, Mail, MessageSquare, Webhook, Globe, Download, ChevronRight } from 'lucide-react';
 
@@ -413,98 +414,8 @@ export function SettingsPage() {
                   </SectionCard>
                 </TabsContent>
 
-                <TabsContent value="authentication" className="space-y-6 mt-0">
-                  <SectionCard
-                    title="SSO Providers"
-                    description="Configure single sign-on with identity providers"
-                    actions={
-                      <Button size="sm" onClick={() => setSsoDrawerOpen(true)}>
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add Provider
-                      </Button>
-                    }
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {['SAML', 'OIDC', 'Azure AD', 'Okta'].map(provider => (
-                        <button
-                          key={provider}
-                          onClick={() => {
-                            setSelectedProvider(provider);
-                            setSsoDrawerOpen(true);
-                          }}
-                          className="flex items-center justify-between p-4 rounded-lg border hover:border-primary transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                              <Shield className="w-5 h-5" />
-                            </div>
-                            <div className="text-left">
-                              <div className="font-medium text-sm">{provider}</div>
-                              <div className="text-xs text-muted-foreground">Not configured</div>
-                            </div>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      ))}
-                    </div>
-                  </SectionCard>
-
-                  <SectionCard title="Authentication Policies" description="MFA and password requirements">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                      <FieldGroup label="Multi-Factor Authentication" description="Require MFA for users">
-                        <Select
-                          value={authSettings.mfaRequired}
-                          onValueChange={v => {
-                            setAuthSettings({ ...authSettings, mfaRequired: v });
-                            handleFieldChange();
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="never">Never require</SelectItem>
-                            <SelectItem value="risk-based">Risk-based</SelectItem>
-                            <SelectItem value="always">Always require</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FieldGroup>
-
-                      <FieldGroup label="Password Min Length" description="Minimum characters">
-                        <Input
-                          type="number"
-                          value={authSettings.passwordMinLength}
-                          onChange={e => {
-                            setAuthSettings({ ...authSettings, passwordMinLength: parseInt(e.target.value) });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
-
-                      <FieldGroup label="Password Expiry" description="Days until expiration">
-                        <Input
-                          type="number"
-                          value={authSettings.passwordExpiry}
-                          onChange={e => {
-                            setAuthSettings({ ...authSettings, passwordExpiry: parseInt(e.target.value) });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
-
-                      <FieldGroup label="Session Max Idle" description="Minutes before timeout">
-                        <Input
-                          type="number"
-                          value={authSettings.sessionMaxIdle}
-                          onChange={e => {
-                            setAuthSettings({ ...authSettings, sessionMaxIdle: parseInt(e.target.value) });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
-                    </div>
-                    <CardMetadata user="Michael Chen" timestamp="5 hours ago" onViewAudit={() => setAuditDrawerOpen(true)} />
-                  </SectionCard>
+                <TabsContent value="authentication" className="mt-0">
+                  <AuthenticationTab onFieldChange={handleFieldChange} />
                 </TabsContent>
 
                 <TabsContent value="ai" className="space-y-6 mt-0">
