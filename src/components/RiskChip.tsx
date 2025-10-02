@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, AlertCircle, Info, ShieldCheck } from 'lucide-react';
+import { TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Info, ShieldCheck } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
