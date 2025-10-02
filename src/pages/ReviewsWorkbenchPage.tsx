@@ -135,7 +135,7 @@ export function ReviewsWorkbenchPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-border">
+      <div className="bg-slate-50 dark:bg-slate-800 border-b border-border shadow-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export function ReviewsWorkbenchPage() {
         <div className="grid grid-cols-12 gap-6">
           {/* Left: Subject List */}
           <aside className="col-span-12 lg:col-span-3">
-            <div className="rounded-xl border border-border bg-white dark:bg-slate-900 overflow-hidden sticky top-6">
+            <div className="rounded-xl border border-border bg-slate-50 dark:bg-slate-800 overflow-hidden sticky top-6 shadow-sm">
               <div className="px-4 py-3 border-b border-border">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium">Subjects ({subjects.length})</h3>
@@ -249,10 +249,10 @@ export function ReviewsWorkbenchPage() {
             </div>
 
             {/* Items Table */}
-            <div className="rounded-xl border border-border overflow-hidden bg-white dark:bg-slate-900">
+            <div className="rounded-xl border border-border overflow-hidden bg-slate-50 dark:bg-slate-800 shadow-sm">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-slate-50 dark:bg-white/5 border-b border-border">
+                  <thead className="bg-slate-100 dark:bg-slate-700 border-b border-border">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Application / Item</th>
                       <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Type</th>
@@ -266,7 +266,7 @@ export function ReviewsWorkbenchPage() {
                     {currentSubject.items.map(item => {
                       const decision = currentSubject.reviewed[item.id];
                       return (
-                        <tr key={item.id} className="border-b border-border last:border-0 hover:bg-slate-50/50 dark:hover:bg-white/5">
+                        <tr key={item.id} className="border-b border-border last:border-0 hover:bg-slate-100 dark:hover:bg-slate-700">
                           <td className="px-4 py-3">
                             <div>
                               <div className="font-medium flex items-center gap-2">
@@ -337,7 +337,7 @@ export function ReviewsWorkbenchPage() {
             </div>
 
             {/* Decision Bar */}
-            <div className="sticky bottom-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur border border-border rounded-xl p-4 shadow-lg">
+            <div className="sticky bottom-4 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur border border-border rounded-xl p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
                   {progress.decided}/{progress.total} decisions made
