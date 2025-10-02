@@ -260,13 +260,9 @@ export function ReviewsWorkbenchPage() {
         className="max-w-[1320px] mx-auto px-6"
         style={{ paddingTop: `${TOP_OFFSET + 24}px`, paddingBottom: '24px' }}
       >
-        <div className="flex gap-6">
-          {/* Left Rail - Subjects (280px) */}
-          <aside
-            className={`w-[280px] flex-shrink-0 hidden lg:block ${
-              showSubjectsDrawer ? 'fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl' : ''
-            }`}
-          >
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Rail - Subjects (280px = 3 cols) */}
+          <aside className="hidden lg:block lg:col-span-3">
             <div
               className="sticky bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
               style={{ top: `${TOP_OFFSET + 24}px` }}
@@ -364,8 +360,8 @@ export function ReviewsWorkbenchPage() {
             </div>
           )}
 
-          {/* Main Column - Access Items (flex-1) */}
-          <section className={`flex-1 min-w-0 ${!showAIPanel ? 'lg:pr-0' : ''}`}>
+          {/* Main Column - Access Items (6 or 9 cols) */}
+          <section className={`lg:col-span-${showAIPanel ? '6' : '9'}`}>
             <div className="space-y-5">
               {/* Subject Header */}
               <div className="flex items-start justify-between gap-4">
@@ -410,13 +406,10 @@ export function ReviewsWorkbenchPage() {
               </div>
 
               {/* Items Table */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead
-                      className="sticky bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700"
-                      style={{ top: `${TOP_OFFSET}px`, zIndex: 10 }}
-                    >
+                    <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
                       <tr>
                         <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
                           Application / Item
@@ -584,9 +577,9 @@ export function ReviewsWorkbenchPage() {
             </div>
           </section>
 
-          {/* Right Rail - AI Assist (320px) */}
+          {/* Right Rail - AI Assist (320px = 3 cols) */}
           {showAIPanel && (
-            <aside className="w-[320px] flex-shrink-0 hidden lg:block">
+            <aside className="hidden lg:block lg:col-span-3">
               <div
                 className="sticky"
                 style={{ top: `${TOP_OFFSET + 24}px` }}
