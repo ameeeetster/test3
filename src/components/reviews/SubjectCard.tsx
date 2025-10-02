@@ -22,8 +22,8 @@ export function SubjectCard({ name, department, risk, total, reviewed, isActive,
       onClick={onClick}
       className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors border-l-2 ${
         isActive
-          ? 'bg-slate-50 dark:bg-white/5 border-l-primary'
-          : 'border-l-transparent hover:bg-slate-50 dark:hover:bg-white/5'
+          ? 'bg-slate-100 dark:bg-slate-700 border-l-primary'
+          : 'border-l-transparent hover:bg-slate-100 dark:hover:bg-slate-700'
       }`}
     >
       <Avatar className="h-9 w-9">

@@ -32,7 +32,7 @@ export function AIAssistPanel({ recommendations, onApplyAll, onFilterRisky }: AI
   };
 
   return (
-    <div className="rounded-xl border border-border bg-white dark:bg-slate-900 p-4 space-y-4">
+    <div className="rounded-xl border border-border bg-slate-50 dark:bg-slate-800 p-4 space-y-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-primary" />
         <h3 className="font-medium">AI Assist</h3>
@@ -42,7 +42,7 @@ export function AIAssistPanel({ recommendations, onApplyAll, onFilterRisky }: AI
         {recommendations.map((rec) => (
           <div
             key={rec.id}
-            className="p-3 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-800"
+            className="p-3 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600"
           >
             <div className="flex items-start gap-2 mb-2">
               {iconMap[rec.type]}
