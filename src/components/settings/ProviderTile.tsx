@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { Shield, MoreVertical, Play, RotateCcw, Power, Settings, History } from 'lucide-react';
+import { Shield, MoveVertical as MoreVertical, Play, RotateCcw, Power, Settings, History } from 'lucide-react';
 
 interface ProviderTileProps {
   name: string;

@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert as AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface PolicyEditDrawerProps {

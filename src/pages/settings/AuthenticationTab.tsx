@@ -10,7 +10,7 @@ import { PolicyRow } from '../../components/settings/PolicyRow';
 import { MFAPolicyEdit } from '../../components/settings/PolicyEditDrawer';
 import { DiffDrawer } from '../../components/settings/DiffDrawer';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Shield, AlertTriangle, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Plus, Shield, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, CirclePlay as PlayCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface AuthenticationTabProps {

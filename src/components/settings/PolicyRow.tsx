@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Edit, AlertTriangle } from 'lucide-react';
+import { CreditCard as Edit, TriangleAlert as AlertTriangle } from 'lucide-react';
 
 interface PolicyRowProps {
   label: string;

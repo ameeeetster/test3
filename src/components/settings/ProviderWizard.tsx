@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { SecretField } from './SecretField';
-import { Copy, Check, ExternalLink, Eye, EyeOff, Upload, Play, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Copy, Check, ExternalLink, Eye, EyeOff, Upload, Play, CircleCheck as CheckCircle2, Circle as XCircle, CircleAlert as AlertCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
 interface ProviderWizardProps {
