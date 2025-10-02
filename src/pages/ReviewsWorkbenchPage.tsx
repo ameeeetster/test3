@@ -240,11 +240,12 @@ export function ReviewsWorkbenchPage() {
         style={{ height: `${HEADER_HEIGHT}px` }}
       >
         <div className="h-full max-w-[1320px] mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/reviews')}>
-              <ArrowLeft className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">Back</span>
+              <ArrowLeft className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
             <Button
               variant="ghost"
               size="sm"
@@ -253,8 +254,8 @@ export function ReviewsWorkbenchPage() {
             >
               {showSubjectsDrawer ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </Button>
-            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700" />
-            <h1 className="text-lg font-semibold">Q1 2025 User Access Review</h1>
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 lg:hidden" />
+            <h1 className="text-base sm:text-lg font-semibold truncate">Q1 2025 User Access Review</h1>
             <Badge variant="outline" className="hidden sm:inline-flex">Active</Badge>
           </div>
           <div className="flex items-center gap-2">
