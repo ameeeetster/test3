@@ -8,13 +8,15 @@ interface RiskChipProps {
   size?: 'sm' | 'md';
   withTooltip?: boolean;
   tooltipContent?: string;
+  showScore?: boolean;
 }
 
-export const RiskChip = React.memo(function RiskChip({ 
-  risk, 
-  size = 'md', 
+export const RiskChip = React.memo(function RiskChip({
+  risk,
+  size = 'md',
   withTooltip = false,
-  tooltipContent 
+  tooltipContent,
+  showScore = false
 }: RiskChipProps) {
   const getRiskConfig = (risk: string) => {
     switch (risk.toLowerCase()) {
@@ -25,6 +27,7 @@ export const RiskChip = React.memo(function RiskChip({
           bgColor: 'var(--danger-bg)',
           borderColor: 'var(--danger-border)',
           label: 'Critical',
+          score: 95,
           tooltip: 'Critical risk: Requires immediate attention and approval'
         };
       case 'high':
@@ -34,6 +37,7 @@ export const RiskChip = React.memo(function RiskChip({
           bgColor: 'var(--warning-bg)',
           borderColor: 'var(--warning-border)',
           label: 'High',
+          score: 75,
           tooltip: 'High risk: Elevated privileges or sensitive access'
         };
       case 'medium':
@@ -43,6 +47,7 @@ export const RiskChip = React.memo(function RiskChip({
           bgColor: 'var(--info-bg)',
           borderColor: 'var(--info-border)',
           label: 'Medium',
+          score: 50,
           tooltip: 'Medium risk: Standard review required'
         };
       case 'low':
@@ -52,6 +57,7 @@ export const RiskChip = React.memo(function RiskChip({
           bgColor: 'var(--success-bg)',
           borderColor: 'var(--success-border)',
           label: 'Low',
+          score: 20,
           tooltip: 'Low risk: Standard user access'
         };
       default:
@@ -61,6 +67,7 @@ export const RiskChip = React.memo(function RiskChip({
           bgColor: 'var(--surface)',
           borderColor: 'var(--border)',
           label: risk,
+          score: 0,
           tooltip: 'Risk level unknown'
         };
     }
@@ -83,7 +90,11 @@ export const RiskChip = React.memo(function RiskChip({
       }}
     >
       <Icon className={iconSize} />
-      <span>{config.label}</span>
+      {showScore ? (
+        <span>{config.score} · {config.label}</span>
+      ) : (
+        <span>{config.label}</span>
+      )}
     </Badge>
   );
 

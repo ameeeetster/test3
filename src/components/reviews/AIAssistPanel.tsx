@@ -32,17 +32,19 @@ export function AIAssistPanel({ recommendations, onApplyAll, onFilterRisky }: AI
   };
 
   return (
-    <div className="rounded-xl border border-border bg-slate-50 dark:bg-slate-800 p-4 space-y-4 shadow-sm">
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-primary" />
-        <h3 className="font-medium">AI Assist</h3>
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <h3 className="font-semibold text-sm">AI Recommendations</h3>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="p-4 space-y-3">
         {recommendations.map((rec) => (
           <div
             key={rec.id}
-            className="p-3 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600"
+            className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
           >
             <div className="flex items-start gap-2 mb-2">
               {iconMap[rec.type]}
@@ -69,7 +71,7 @@ export function AIAssistPanel({ recommendations, onApplyAll, onFilterRisky }: AI
         ))}
       </div>
 
-      <div className="pt-3 border-t border-border space-y-2">
+      <div className="px-4 pb-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
         <Button onClick={onApplyAll} variant="outline" className="w-full justify-start" size="sm">
           <Sparkles className="w-3.5 h-3.5 mr-2" />
           Apply all safe recommendations

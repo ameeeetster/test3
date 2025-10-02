@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ListFilter as Filter, Sparkles, ChevronRight, Keyboard } from 'lucide-react';
+import { ArrowLeft, ListFilter as Filter, Sparkles, ChevronRight, Keyboard, Download, Undo2, Redo2, Menu, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Progress } from '../components/ui/progress';
@@ -29,6 +29,7 @@ type Subject = {
   risk: 'Low' | 'Medium' | 'High' | 'Critical';
   items: AccessItem[];
   reviewed: Record<string, 'Keep' | 'Revoke' | 'Delegate' | 'Time-bound' | undefined>;
+  slaRemaining?: string;
 };
 
 const demoSubjects: Subject[] = [
@@ -37,6 +38,7 @@ const demoSubjects: Subject[] = [
     name: 'Jessica Smith',
     dept: 'Finance',
     risk: 'High',
+    slaRemaining: '2d',
     items: [
       { id: '1', app: 'Oracle ERP', item: 'AP Write', type: 'Role', lastUsedPct: 3, risk: 'High', ai: 'Time-bound', elevated: true },
       { id: '2', app: 'M365', item: 'Global Reader', type: 'Role', lastUsedPct: 78, risk: 'Low', ai: 'Keep' },
@@ -50,6 +52,7 @@ const demoSubjects: Subject[] = [
     name: 'Michael Chen',
     dept: 'Engineering',
     risk: 'Medium',
+    slaRemaining: '5d',
     items: [
       { id: '5', app: 'GitHub', item: 'Org Owner', type: 'Role', lastUsedPct: 92, risk: 'High', ai: 'Keep' },
       { id: '6', app: 'AWS', item: 'Production Admin', type: 'Role', lastUsedPct: 67, risk: 'High', ai: 'Keep' },
@@ -62,6 +65,7 @@ const demoSubjects: Subject[] = [
     name: 'Sarah Johnson',
     dept: 'Operations',
     risk: 'Low',
+    slaRemaining: '7d',
     items: [
       { id: '8', app: 'Jira', item: 'Project Admin', type: 'Role', lastUsedPct: 89, risk: 'Low', ai: 'Keep' },
       { id: '9', app: 'Confluence', item: 'Space Admin', type: 'Role', lastUsedPct: 71, risk: 'Low', ai: 'Keep' },
@@ -77,13 +81,19 @@ const aiRecommendations = [
   { id: '4', type: 'flag' as const, confidence: 91, reason: 'SoD conflict detected', itemCount: 1 },
 ];
 
+const HEADER_HEIGHT = 64;
+const PROGRESS_BAR_HEIGHT = 64;
+const TOP_OFFSET = HEADER_HEIGHT + PROGRESS_BAR_HEIGHT;
+
 export function ReviewsWorkbenchPage() {
   const navigate = useNavigate();
   const { campaignId } = useParams();
   const [subjects, setSubjects] = useState<Subject[]>(demoSubjects);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAIPanel, setShowAIPanel] = useState(true);
+  const [showSubjectsDrawer, setShowSubjectsDrawer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [focusedRow, setFocusedRow] = useState<string | null>(null);
 
   const currentSubject = subjects[currentIndex];
 
@@ -96,11 +106,22 @@ export function ReviewsWorkbenchPage() {
   const overallProgress = useMemo(() => {
     let totalItems = 0;
     let decidedItems = 0;
+    let criticalRemaining = 0;
     subjects.forEach(s => {
       totalItems += s.items.length;
       decidedItems += Object.values(s.reviewed).filter(Boolean).length;
+      s.items.forEach(item => {
+        if (item.risk === 'Critical' && !s.reviewed[item.id]) {
+          criticalRemaining++;
+        }
+      });
     });
-    return { total: totalItems, decided: decidedItems, pct: Math.round((decidedItems / totalItems) * 100) || 0 };
+    return {
+      total: totalItems,
+      decided: decidedItems,
+      pct: Math.round((decidedItems / totalItems) * 100) || 0,
+      criticalRemaining
+    };
   }, [subjects]);
 
   function setDecision(itemId: string, decision: Subject['reviewed'][string]) {
@@ -132,70 +153,143 @@ export function ReviewsWorkbenchPage() {
     navigate('/reviews');
   }
 
+  function exportCSV() {
+    toast.info('Exporting decisions to CSV...');
+  }
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key.toLowerCase();
+      if (focusedRow) {
+        switch(key) {
+          case 'k':
+            setDecision(focusedRow, 'Keep');
+            break;
+          case 'r':
+            setDecision(focusedRow, 'Revoke');
+            break;
+          case 'd':
+            setDecision(focusedRow, 'Delegate');
+            break;
+          case 't':
+            setDecision(focusedRow, 'Time-bound');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [focusedRow]);
+
+  const filteredSubjects = subjects.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.dept.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Header */}
-      <div className="bg-slate-50 dark:bg-slate-800 border-b border-border shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+      {/* Top Bar - Fixed */}
+      <header
+        className="fixed top-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-sm z-50"
+        style={{ height: `${HEADER_HEIGHT}px` }}
+      >
+        <div className="h-full max-w-[1320px] mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/reviews')} className="lg:flex hidden">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setShowSubjectsDrawer(!showSubjectsDrawer)}
+            >
+              {showSubjectsDrawer ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </Button>
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700" />
+            <h1 className="text-lg font-semibold">Q1 2025 User Access Review</h1>
+            <Badge variant="outline" className="hidden sm:inline-flex">Active</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs hidden md:inline-flex">
+              <Keyboard className="w-3 h-3 mr-1" />
+              K · R · D · T
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden lg:flex"
+              onClick={() => setShowAIPanel(!showAIPanel)}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Progress Band - Sticky under top bar */}
+      <div
+        className="fixed left-0 right-0 bg-slate-50/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-sm z-40"
+        style={{ top: `${HEADER_HEIGHT}px`, height: `${PROGRESS_BAR_HEIGHT}px` }}
+      >
+        <div className="h-full max-w-[1320px] mx-auto px-6 py-3">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="text-slate-600 dark:text-slate-400">
+              Overall: {overallProgress.decided}/{overallProgress.total} items
+            </span>
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/reviews')}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Reviews
-              </Button>
-              <div className="h-5 w-px bg-border" />
-              <h1 className="text-xl" style={{ fontWeight: 'var(--font-weight-semibold)' }}>
-                Q1 2025 User Access Review
-              </h1>
-              <Badge variant="outline">Active</Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                <Keyboard className="w-3 h-3 mr-1" />
-                K = Keep · R = Revoke · D = Delegate
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={() => setShowAIPanel(!showAIPanel)}>
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Assist
-              </Button>
+              {overallProgress.criticalRemaining > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  {overallProgress.criticalRemaining} Critical Remaining
+                </Badge>
+              )}
+              <span className="font-semibold">{overallProgress.pct}%</span>
             </div>
           </div>
-          
-          {/* Overall Progress */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600 dark:text-slate-400">
-                Overall Progress: {overallProgress.decided}/{overallProgress.total} items reviewed
-              </span>
-              <span className="font-medium">{overallProgress.pct}%</span>
-            </div>
-            <Progress value={overallProgress.pct} className="h-2" />
-          </div>
+          <Progress value={overallProgress.pct} className="h-2" />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto p-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left: Subject List */}
-          <aside className="col-span-12 lg:col-span-3">
-            <div className="rounded-xl border border-border bg-slate-50 dark:bg-slate-800 overflow-hidden sticky top-6 shadow-sm">
-              <div className="px-4 py-3 border-b border-border">
+      {/* Main Content Area */}
+      <main
+        className="max-w-[1320px] mx-auto px-6"
+        style={{ paddingTop: `${TOP_OFFSET + 24}px`, paddingBottom: '24px' }}
+      >
+        <div className="flex gap-6">
+          {/* Left Rail - Subjects (280px) */}
+          <aside
+            className={`w-[280px] flex-shrink-0 hidden lg:block ${
+              showSubjectsDrawer ? 'fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 shadow-xl' : ''
+            }`}
+          >
+            <div
+              className="sticky bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
+              style={{ top: `${TOP_OFFSET + 24}px` }}
+            >
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">Subjects ({subjects.length})</h3>
-                  <Button variant="ghost" size="sm" className="h-7">
+                  <h3 className="font-semibold text-sm">Subjects ({subjects.length})</h3>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                     <Filter className="w-3.5 h-3.5" />
                   </Button>
                 </div>
                 <Input
-                  placeholder="Search subjects..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-8 text-sm"
                 />
               </div>
-              <div className="max-h-[70vh] overflow-auto">
-                {subjects.map((subject, index) => {
+              <div
+                className="overflow-y-auto"
+                style={{ maxHeight: `calc(100vh - ${TOP_OFFSET + 24 + 88}px)` }}
+              >
+                {filteredSubjects.map((subject, index) => {
                   const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
                   return (
                     <SubjectCard
@@ -206,7 +300,11 @@ export function ReviewsWorkbenchPage() {
                       total={subject.items.length}
                       reviewed={reviewed}
                       isActive={index === currentIndex}
-                      onClick={() => setCurrentIndex(index)}
+                      onClick={() => {
+                        setCurrentIndex(index);
+                        setShowSubjectsDrawer(false);
+                      }}
+                      slaRemaining={subject.slaRemaining}
                     />
                   );
                 })}
@@ -214,206 +312,353 @@ export function ReviewsWorkbenchPage() {
             </div>
           </aside>
 
-          {/* Center: Access Items */}
-          <section className={`col-span-12 ${showAIPanel ? 'lg:col-span-6' : 'lg:col-span-9'} space-y-4`}>
-            {/* Subject Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium mb-1">{currentSubject.name}</h2>
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <span>{currentSubject.dept}</span>
-                  <span>·</span>
-                  <RiskChip risk={currentSubject.risk} size="sm" />
-                  <span>·</span>
-                  <span>
-                    {progress.decided}/{progress.total} reviewed ({progress.pct}%)
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => bulkApply(currentSubject.items.filter(i => i.risk === 'Low'), 'Keep')}
-                >
-                  Keep all low-risk
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => bulkApply(currentSubject.items.filter(i => (i.lastUsedPct ?? 0) === 0), 'Revoke')}
-                >
-                  Revoke unused
-                </Button>
-              </div>
-            </div>
-
-            {/* Items Table */}
-            <div className="rounded-xl border border-border overflow-hidden bg-slate-50 dark:bg-slate-800 shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-slate-100 dark:bg-slate-700 border-b border-border">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Application / Item</th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Type</th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Last Used</th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Risk</th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">AI</th>
-                      <th className="px-4 py-3 text-left font-medium text-slate-600 dark:text-slate-300">Decision</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentSubject.items.map(item => {
-                      const decision = currentSubject.reviewed[item.id];
+          {/* Mobile Subjects Drawer */}
+          {showSubjectsDrawer && (
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50"
+              onClick={() => setShowSubjectsDrawer(false)}
+            >
+              <aside
+                className="fixed inset-y-0 left-0 w-[280px] bg-white dark:bg-slate-900 shadow-xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+                style={{ paddingTop: `${TOP_OFFSET}px` }}
+              >
+                <div className="h-full flex flex-col">
+                  <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-sm">Subjects ({subjects.length})</h3>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                        <Filter className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Input
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    {filteredSubjects.map((subject, index) => {
+                      const reviewed = Object.values(subject.reviewed).filter(Boolean).length;
                       return (
-                        <tr key={item.id} className="border-b border-border last:border-0 hover:bg-slate-100 dark:hover:bg-slate-700">
-                          <td className="px-4 py-3">
-                            <div>
-                              <div className="font-medium flex items-center gap-2">
-                                {item.app}
-                                {item.sodConflict && (
-                                  <Badge variant="destructive" className="text-xs">SoD</Badge>
-                                )}
-                                {item.elevated && (
-                                  <Badge variant="outline" className="text-xs">Elevated</Badge>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-500">{item.item}</div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">{item.type}</td>
-                          <td className="px-4 py-3">
-                            <span className={item.lastUsedPct === 0 ? 'text-danger' : ''}>
-                              {item.lastUsedPct ?? '—'}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <RiskChip risk={item.risk} size="sm" />
-                          </td>
-                          <td className="px-4 py-3">
-                            {item.ai ? (
-                              <Badge variant="outline" className="text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                {item.ai}
-                              </Badge>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-1">
-                              <DecisionChip
-                                label="Keep"
-                                variant="success"
-                                active={decision === 'Keep'}
-                                onClick={() => setDecision(item.id, 'Keep')}
-                              />
-                              <DecisionChip
-                                label="Revoke"
-                                variant="danger"
-                                active={decision === 'Revoke'}
-                                onClick={() => setDecision(item.id, 'Revoke')}
-                              />
-                              <DecisionChip
-                                label="Delegate"
-                                variant="outline"
-                                active={decision === 'Delegate'}
-                                onClick={() => setDecision(item.id, 'Delegate')}
-                              />
-                              <DecisionChip
-                                label="Time-bound"
-                                variant="warning"
-                                active={decision === 'Time-bound'}
-                                onClick={() => setDecision(item.id, 'Time-bound')}
-                              />
-                            </div>
-                          </td>
-                        </tr>
+                        <SubjectCard
+                          key={subject.id}
+                          name={subject.name}
+                          department={subject.dept}
+                          risk={subject.risk}
+                          total={subject.items.length}
+                          reviewed={reviewed}
+                          isActive={index === currentIndex}
+                          onClick={() => {
+                            setCurrentIndex(index);
+                            setShowSubjectsDrawer(false);
+                          }}
+                          slaRemaining={subject.slaRemaining}
+                        />
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Decision Bar */}
-            <div className="sticky bottom-4 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur border border-border rounded-xl p-4 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-slate-600 dark:text-slate-400">
-                  {progress.decided}/{progress.total} decisions made
-                  {progress.decided === progress.total && (
-                    <span className="ml-2 text-success">✓ All items reviewed</span>
-                  )}
+                  </div>
                 </div>
-                <div className="flex gap-2">
+              </aside>
+            </div>
+          )}
+
+          {/* Main Column - Access Items (flex-1) */}
+          <section className={`flex-1 min-w-0 ${!showAIPanel ? 'lg:pr-0' : ''}`}>
+            <div className="space-y-5">
+              {/* Subject Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold mb-1">{currentSubject.name}</h2>
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
+                    <span>{currentSubject.dept}</span>
+                    <span>·</span>
+                    <RiskChip risk={currentSubject.risk} size="sm" />
+                    <span>·</span>
+                    <span>
+                      {progress.decided}/{progress.total} reviewed ({progress.pct}%)
+                    </span>
+                    {currentSubject.slaRemaining && (
+                      <>
+                        <span>·</span>
+                        <Badge variant="outline" className="text-xs">
+                          {currentSubject.slaRemaining} remaining
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
                   <Button
                     variant="outline"
-                    onClick={nextSubject}
-                    disabled={currentIndex === subjects.length - 1}
+                    size="sm"
+                    className="hidden sm:flex"
+                    onClick={() => bulkApply(currentSubject.items.filter(i => i.risk === 'Low'), 'Keep')}
                   >
-                    Next Subject
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    Keep low-risk
                   </Button>
-                  <Button onClick={submitDecisions}>
-                    Submit All Decisions
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex"
+                    onClick={() => bulkApply(currentSubject.items.filter(i => (i.lastUsedPct ?? 0) === 0), 'Revoke')}
+                  >
+                    Revoke unused
                   </Button>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead
+                      className="sticky bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700"
+                      style={{ top: `${TOP_OFFSET}px`, zIndex: 10 }}
+                    >
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          Application / Item
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          Type
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          Last Used
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          Risk
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          AI Rec.
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                          Decision
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentSubject.items.map((item, idx) => {
+                        const decision = currentSubject.reviewed[item.id];
+                        const isFocused = focusedRow === item.id;
+                        return (
+                          <tr
+                            key={item.id}
+                            className={`border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors ${
+                              isFocused
+                                ? 'bg-primary/5 ring-2 ring-inset ring-primary/20'
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                            }`}
+                            style={{ height: '46px' }}
+                            tabIndex={0}
+                            onFocus={() => setFocusedRow(item.id)}
+                            onBlur={() => setFocusedRow(null)}
+                          >
+                            <td className="px-4 py-3">
+                              <div>
+                                <div className="font-medium flex items-center gap-2">
+                                  {item.app}
+                                  {item.sodConflict && (
+                                    <Badge variant="destructive" className="text-xs h-5">SoD</Badge>
+                                  )}
+                                  {item.elevated && (
+                                    <Badge variant="outline" className="text-xs h-5">Elevated</Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{item.item}</div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                              {item.type}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={
+                                item.lastUsedPct === 0
+                                  ? 'text-danger font-medium'
+                                  : item.lastUsedPct && item.lastUsedPct < 20
+                                  ? 'text-warning'
+                                  : 'text-slate-600 dark:text-slate-300'
+                              }>
+                                {item.lastUsedPct !== undefined ? `${item.lastUsedPct}%` : '—'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <RiskChip risk={item.risk} size="sm" showScore />
+                            </td>
+                            <td className="px-4 py-3">
+                              {item.ai ? (
+                                <Badge variant="secondary" className="text-xs h-6 font-normal">
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  {item.ai}
+                                </Badge>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-1.5">
+                                <DecisionChip
+                                  label="K"
+                                  fullLabel="Keep"
+                                  variant="success"
+                                  active={decision === 'Keep'}
+                                  onClick={() => setDecision(item.id, 'Keep')}
+                                />
+                                <DecisionChip
+                                  label="R"
+                                  fullLabel="Revoke"
+                                  variant="danger"
+                                  active={decision === 'Revoke'}
+                                  onClick={() => setDecision(item.id, 'Revoke')}
+                                />
+                                <DecisionChip
+                                  label="D"
+                                  fullLabel="Delegate"
+                                  variant="outline"
+                                  active={decision === 'Delegate'}
+                                  onClick={() => setDecision(item.id, 'Delegate')}
+                                />
+                                <DecisionChip
+                                  label="T"
+                                  fullLabel="Time"
+                                  variant="warning"
+                                  active={decision === 'Time-bound'}
+                                  onClick={() => setDecision(item.id, 'Time-bound')}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Decision Bar - Sticky to bottom of main column */}
+              <div
+                className="sticky bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg"
+                style={{ bottom: '16px', zIndex: 30, height: '64px' }}
+              >
+                <div className="h-full px-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Decisions: </span>
+                      <span className="font-semibold">{progress.decided}/{progress.total}</span>
+                    </div>
+                    {progress.decided === progress.total && (
+                      <Badge variant="default" className="bg-emerald-500">
+                        ✓ Complete
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden md:flex"
+                      onClick={exportCSV}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={nextSubject}
+                      disabled={currentIndex === subjects.length - 1}
+                    >
+                      Next Subject
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                    <Button
+                      onClick={submitDecisions}
+                      disabled={overallProgress.decided === 0}
+                    >
+                      Submit All
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Right: AI Assist Panel */}
+          {/* Right Rail - AI Assist (320px) */}
           {showAIPanel && (
-            <aside className="col-span-12 lg:col-span-3">
-              <div className="sticky top-6">
-                <AIAssistPanel
-                  recommendations={aiRecommendations}
-                  onApplyAll={() => {
-                    toast.success('Applied all safe AI recommendations');
-                  }}
-                  onFilterRisky={() => {
-                    toast.info('Filtered to show risky/unused items only');
-                  }}
-                />
+            <aside className="w-[320px] flex-shrink-0 hidden lg:block">
+              <div
+                className="sticky"
+                style={{ top: `${TOP_OFFSET + 24}px` }}
+              >
+                <div
+                  className="overflow-y-auto"
+                  style={{ maxHeight: `calc(100vh - ${TOP_OFFSET + 24 + 88}px)` }}
+                >
+                  <AIAssistPanel
+                    recommendations={aiRecommendations}
+                    onApplyAll={() => {
+                      toast.success('Applied all safe AI recommendations');
+                    }}
+                    onFilterRisky={() => {
+                      toast.info('Filtered to show risky/unused items only');
+                    }}
+                  />
+                </div>
               </div>
             </aside>
           )}
         </div>
-      </div>
+      </main>
+
+      {/* Mobile AI Button */}
+      {!showAIPanel && (
+        <Button
+          className="lg:hidden fixed bottom-24 right-6 rounded-full h-12 w-12 p-0 shadow-lg z-40"
+          onClick={() => setShowAIPanel(true)}
+        >
+          <Sparkles className="w-5 h-5" />
+        </Button>
+      )}
     </div>
   );
 }
 
 function DecisionChip({
   label,
+  fullLabel,
   variant,
   active,
   onClick,
 }: {
   label: string;
+  fullLabel: string;
   variant: 'success' | 'danger' | 'warning' | 'outline';
   active?: boolean;
   onClick: () => void;
 }) {
   const styles = {
     success: active
-      ? 'bg-success text-white border-success'
-      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-900',
     danger: active
-      ? 'bg-danger text-white border-danger'
-      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800',
+      ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800 dark:hover:bg-rose-900',
     warning: active
-      ? 'bg-warning text-white border-warning'
-      : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
+      ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+      : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 dark:hover:bg-amber-900',
     outline: active
-      ? 'bg-primary text-white border-primary'
-      : 'bg-transparent text-slate-700 border-slate-300 hover:bg-slate-50 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-white/5',
+      ? 'bg-primary text-white border-primary shadow-sm'
+      : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700',
   };
 
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-2 py-1 rounded-md border transition-colors ${styles[variant]}`}
+      className={`text-xs px-2.5 py-1 rounded-md border transition-all font-medium ${styles[variant]} focus:ring-2 focus:ring-offset-1 focus:ring-primary`}
+      aria-pressed={active}
+      aria-label={fullLabel}
+      title={fullLabel}
     >
       {label}
     </button>
