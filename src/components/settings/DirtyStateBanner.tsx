@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import { CircleAlert as AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 
 interface DirtyStateBannerProps {
