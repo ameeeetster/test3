@@ -94,6 +94,7 @@ export function ReviewsWorkbenchPage() {
   const [showSubjectsDrawer, setShowSubjectsDrawer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [focusedRow, setFocusedRow] = useState<string | null>(null);
+  const [highlightedItems, setHighlightedItems] = useState<string[]>([]);
 
   const currentSubject = subjects[currentIndex];
 
@@ -188,6 +189,48 @@ export function ReviewsWorkbenchPage() {
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.dept.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getItemsForRecommendation = (recType: string): string[] => {
+    const typeMap: Record<string, string[]> = {
+      'revoke': currentSubject.items.filter(item => item.ai === 'Revoke').map(i => i.id),
+      'time-bound': currentSubject.items.filter(item => item.ai === 'Time-bound').map(i => i.id),
+      'keep': currentSubject.items.filter(item => item.ai === 'Keep').map(i => i.id),
+      'flag': currentSubject.items.filter(item => item.sodConflict).map(i => i.id),
+    };
+    return typeMap[recType] || [];
+  };
+
+  const handlePreviewRecommendation = (rec: { id: string; type: string; itemCount: number }) => {
+    const itemIds = getItemsForRecommendation(rec.type);
+    setHighlightedItems(itemIds);
+
+    if (itemIds.length > 0) {
+      const firstElement = document.getElementById(`item-row-${itemIds[0]}`);
+      firstElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast.info(`Highlighting ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} for ${rec.type}`);
+    }
+
+    setTimeout(() => setHighlightedItems([]), 3000);
+  };
+
+  const handleApplyRecommendation = (rec: { id: string; type: string; itemCount: number }) => {
+    const itemIds = getItemsForRecommendation(rec.type);
+    const decision = rec.type === 'time-bound' ? 'Time-bound' : rec.type === 'revoke' ? 'Revoke' : 'Keep';
+
+    setSubjects(prev => prev.map((s, idx) =>
+      idx === currentIndex
+        ? {
+            ...s,
+            reviewed: {
+              ...s.reviewed,
+              ...Object.fromEntries(itemIds.map(id => [id, decision]))
+            }
+          }
+        : s
+    ));
+
+    toast.success(`Applied ${rec.type} recommendation to ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''}`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
@@ -435,11 +478,15 @@ export function ReviewsWorkbenchPage() {
                       {currentSubject.items.map((item, idx) => {
                         const decision = currentSubject.reviewed[item.id];
                         const isFocused = focusedRow === item.id;
+                        const isHighlighted = highlightedItems.includes(item.id);
                         return (
                           <tr
                             key={item.id}
-                            className={`border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors ${
-                              isFocused
+                            id={`item-row-${item.id}`}
+                            className={`border-b border-slate-100 dark:border-slate-800 last:border-0 transition-all duration-300 ${
+                              isHighlighted
+                                ? 'bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-lg'
+                                : isFocused
                                 ? 'bg-primary/5 ring-2 ring-inset ring-primary/20'
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                             }`}
@@ -596,12 +643,8 @@ export function ReviewsWorkbenchPage() {
                     onFilterRisky={() => {
                       toast.info('Filtered to show risky/unused items only');
                     }}
-                    onPreview={(rec) => {
-                      toast.info(`Previewing ${rec.itemCount} items for: ${rec.type}`);
-                    }}
-                    onApply={(rec) => {
-                      toast.success(`Applied ${rec.type} recommendation to ${rec.itemCount} items`);
-                    }}
+                    onPreview={handlePreviewRecommendation}
+                    onApply={handleApplyRecommendation}
                   />
                 </div>
               </div>
