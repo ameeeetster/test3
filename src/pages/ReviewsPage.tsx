@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, Download, Search, Filter, Grid3x3, List, Calendar, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { Plus, Upload, Download, Search, ListFilter as Filter, Grid3x3, List, Calendar, Users, TriangleAlert as AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
