@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Users, AlertCircle, CheckCircle2, Clock, MoreHorizontal } from 'lucide-react';
+import { Calendar, Users, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Clock, MoveHorizontal as MoreHorizontal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
