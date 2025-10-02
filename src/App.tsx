@@ -20,26 +20,7 @@ import { IntegrationDetailPage } from './pages/IntegrationDetailPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { ReviewsWorkbenchPage } from './pages/ReviewsWorkbenchPage';
 import { CreateReviewWizard } from './components/reviews/CreateReviewWizard';
-
-// Placeholder pages
-
-function ReportsPage() {
-  return (
-    <div className="p-4 lg:p-6 max-w-[1440px] mx-auto">
-      <h1 style={{ 
-        fontSize: 'var(--text-display)',
-        lineHeight: 'var(--line-height-display)',
-        fontWeight: 'var(--font-weight-semibold)',
-        color: 'var(--text)'
-      }}>
-        Reports & Analytics
-      </h1>
-      <p style={{ fontSize: 'var(--text-body)', color: 'var(--muted)', marginTop: '8px' }}>
-        Generate compliance and audit reports
-      </p>
-    </div>
-  );
-}
+import { ReportsPage } from './pages/ReportsPage';
 
 export default function App() {
   return (
