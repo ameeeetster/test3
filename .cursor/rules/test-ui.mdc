@@ -1,0 +1,204 @@
+Awesome idea — here’s a **Cursor project rule** you can drop into your repo to test **UI features end-to-end** (and the **backend** when logic exists). It’s plug-and-play, includes an auto-attach header so Cursor won’t warn you, and gives clear commands/checklists Cursor can follow while it tests.
+
+Save as: `/rules/ui_test_doctrine.md`
+
+---
+
+````markdown
+---
+description: >
+  UI & End-to-End Test Doctrine for the IGA tool. Provides a repeatable protocol
+  to discover implemented features, generate a test plan, run automated checks
+  (unit, integration, E2E, accessibility, visual regression, API contracts,
+  performance), and produce an auditable report.
+autoAttach:
+  globs:
+    - "**/*.tsx"
+    - "**/*.jsx"
+    - "**/*.css"
+    - "**/*.html"
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+    - "**/*.e2e.ts"
+    - "**/*.e2e.tsx"
+    - "src/**/api/**/*"
+    - "src/**/server/**/*"
+---
+
+# 🧪 UI & E2E Test Doctrine — IGA Platform
+
+> Use this rule to **test what’s built so far**: verify UI features, flows, and (when present) backend logic.
+> Aligns with the Autonomous IGA Doctrine (read-before-write, dry-run where possible, evidence-based).
+
+---
+
+## Phase 0 — Scope Discovery (Read-Only)
+
+**Directive:** Build a factual map of what exists today.
+
+**Actions:**
+- Inventory **routes & screens** (router config, `/pages`, `app/`, or navigation).
+- List **components** used by each screen and their props/state.
+- Detect **critical IGA flows** present: **Joiner, Mover, Leaver**, **Access Request**, **Certification**, **SoD review**, **Entitlement management**.
+- Identify **backend touchpoints** (REST/GraphQL endpoints, RPCs, queues) and schemas/validators (zod, OpenAPI, tRPC).
+- Check existing tests, CI config, and coverage thresholds.
+
+**Output:** “Scope Digest” ≤ 150 lines (in chat): screens, flows, APIs, gaps.
+
+---
+
+## Phase 1 — Test Plan Synthesis
+
+**Directive:** Create a minimal, high-coverage plan.
+
+**Matrix (fill based on Phase 0):**
+| Area | What to validate | Test type |
+|---|---|---|
+| Navigation & Layout | routes, breadcrumbs, sidebar active states | integration |
+| Forms | validation, error states, optimistic/disabled states | unit + integration |
+| Tables/Lists | paging, sort, filter, empty/error | integration |
+| Modals/Toasts | open/close, focus trap | unit + integration |
+| JML Flows | happy/sad paths, idempotency hints | E2E |
+| Access Requests | policy checks, approvals, work item creation | E2E |
+| Certifications | compile, decision, reminders (mock), export | E2E |
+| SoD | violations, exceptions (expiry), mitigations | E2E |
+| API Contracts | request/response shape, error taxonomy | contract |
+| Accessibility | keyboard, roles, labels, contrast | a11y |
+| Performance | key page LCP/TBT, route transitions | perf |
+| Visual | regressions of key screens | visual |
+
+**Acceptance bar:**
+- **Unit/Integration:** >80% statements/branches on changed areas.
+- **E2E critical paths:** green for JML, Access Request, Certification.
+- **A11y:** zero critical axe issues.
+- **Perf:** no Lighthouse category < 80 (desktop baseline).
+- **Visual:** no diffs beyond approved thresholds.
+
+---
+
+## Phase 2 — Test Implementation Protocol
+
+> Prefer **React Testing Library + Vitest/Jest**, **Playwright/Cypress** for E2E, **axe-core** for a11y, **Lighthouse** for perf, **Pact** or **OpenAPI schema validation** for contracts, **Playwright trace/snapshots** for visual.
+
+**Standards:**
+- Use **MSW** (Mock Service Worker) for UI tests to isolate backend, unless contract/E2E demands real API.
+- Produce **idempotent** E2E data setup/teardown (seed fixtures; do not depend on previous runs).
+- Tag tests by feature (e.g., `@cert`, `@sod`, `@jml`) for selective runs.
+
+**Example commands (illustrative):**
+```bash
+# example: unit/integration
+timeout 180s pnpm test
+
+# example: E2E (headless with trace)
+timeout 900s pnpm e2e -- --trace on --reporter list
+
+# example: accessibility (axe) in Playwright
+timeout 300s pnpm test:a11y
+
+# example: Lighthouse (CI mode)
+timeout 300s pnpm test:perf -- --ci --budgets budgets.json
+
+# example: API contract (OpenAPI or Pact)
+timeout 300s pnpm test:contract
+````
+
+**What to write for each area:**
+
+* **Navigation/Layouts:** verify route exists, active states, protected routes redirect unauthenticated users.
+* **Forms:** required, pattern, async validation; disabled while submitting; error banners from API.
+* **Tables:** pagination boundaries, sorting (asc/desc), filter chips reset.
+* **Modals:** focus trap, ESC close, primary/secondary actions.
+* **JML:**
+
+  * Joiner → birthright role preview → submit → audit event asserted.
+  * Mover → role delta visible → SoD re-eval mock → success → downstream work item emitted.
+  * Leaver → account disable preview → confirm → license removal job enqueued.
+* **Access Requests:** catalog search → add to cart → policy check → multi-step approval → fulfillment → audit log.
+* **Certifications:** compile (mock dataset) → reminders (email/Teams mock) → revoke → revocation job queued and resolved.
+* **SoD:** violation raised → mitigation/exception with **auto-expiry** → reminder scheduled.
+* **API:** validate request/response schema, status codes, error codes; resiliency (retry/backoff mocked).
+* **A11y:** roles, labels, tab order, visible focus, ARIA for complex widgets.
+* **Perf:** Largest contentful element under budget; route change under 200ms on dev machine.
+* **Visual:** baseline snapshots for dashboard, certification list, request wizard, entitlement table, SoD review.
+
+---
+
+## Phase 3 — Verification & Evidence
+
+**Directive:** Run the plan and collect artifacts.
+
+**Artifacts to attach/reference in chat:**
+
+* Test summaries (jest/vitest), coverage reports.
+* Playwright/Cypress HTML report + traces.
+* Lighthouse JSON reports.
+* Visual snapshot diffs.
+* Contract test logs.
+* Any seed/reset scripts used.
+
+**Autonomous correction:** If a gate fails, diagnose, fix test or code (small UI/logic issues allowed), re-run until green.
+
+---
+
+## Phase 4 — Final Test Report
+
+**Structure (post in chat):**
+
+* **Scope Tested:** screens/flows/assets covered.
+* **Results:**
+
+  * Unit/Integration: ✅/⚠️ with coverage %
+  * E2E paths: list and status
+  * A11y/Lighthouse: scores & issues (links to artifacts)
+  * API Contracts: pass/fail per endpoint
+  * Visual: changed snapshots (approved/rejected)
+* **Opened Defects:** short list with repro tags (`@cert`, `@sod`, etc.).
+* **Verdict:**
+
+  * `"Test Suite Green. Release candidate."` **or**
+  * `"Blocking issues found. See defects."`
+* Legend: ✅ passed · ⚠️ flaky/self-corrected · 🚧 blocker
+
+---
+
+## Guardrails & Defaults
+
+* Do **not** hit production endpoints.
+* Redact PII in logs; prefer **synthetic identities** for JML tests.
+* Keep tests deterministic (no reliance on wall-clock, random without seed).
+* Prefer **feature flags** to enable/disable WIP areas during E2E.
+
+---
+
+## Quick Triggers
+
+Use any of the following in chat to invoke this doctrine explicitly:
+
+```
+ui-test: "Run full suite for Certification and Access Request"
+ui-test: "Smoke test JML flows and navigation"
+ui-test: "Contract + a11y on entitlement pages"
+```
+
+---
+
+```
+
+---
+
+### How to use it
+- Put the file at `/rules/ui_test_doctrine.md`.
+- It **auto-attaches** to UI & test files (via `globs`) and you can **manually trigger** it with a prompt like:
+```
+
+ui-test: "Run smoke tests for dashboard navigation, tables and modals"
+
+```
+- Cursor will follow the phases, generate a **test plan**, run/guide the **checks**, and produce a **final report** with a pass/fail verdict.
+
+---
+alwaysApply: true
+---

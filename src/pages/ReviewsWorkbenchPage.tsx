@@ -8,7 +8,7 @@ import { Badge } from '../components/ui/badge';
 import { SubjectCard } from '../components/reviews/SubjectCard';
 import { AIAssistPanel } from '../components/reviews/AIAssistPanel';
 import { RiskChip } from '../components/RiskChip';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 type AccessItem = {
   id: string;

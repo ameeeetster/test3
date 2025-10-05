@@ -10,7 +10,7 @@ import { CampaignCard } from '../components/reviews/CampaignCard';
 import { RiskChip } from '../components/RiskChip';
 import { Progress } from '../components/ui/progress';
 import { useUser } from '../contexts/UserContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const mockMyTasks = [
   {

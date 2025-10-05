@@ -25,7 +25,7 @@ import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Progress } from '../components/ui/progress';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { InstanceSwitcher } from '../components/InstanceSwitcher';
 import { getInstanceById, getInstancesByConnectorType } from '../data/integration-instances';

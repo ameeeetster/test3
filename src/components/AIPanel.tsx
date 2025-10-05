@@ -3,6 +3,7 @@ import { Sparkles, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { toast } from 'sonner';
 
 interface AISuggestion {
   type: 'insight' | 'recommendation' | 'alert' | 'approval';
@@ -95,6 +96,10 @@ export function AIPanel({ suggestions }: AIPanelProps) {
             borderColor: 'var(--primary)',
             color: 'var(--primary)'
           }}
+          onClick={() => {
+            toast.success("Applied all safe fixes successfully");
+            console.log('Applied all safe fixes');
+          }}
         >
           Apply all safe fixes
         </Button>
@@ -151,6 +156,10 @@ export function AIPanel({ suggestions }: AIPanelProps) {
                             variant="ghost"
                             className="h-auto p-0 hover:underline text-xs"
                             style={{ color: 'var(--danger)', fontWeight: 'var(--font-weight-medium)' }}
+                            onClick={() => {
+                              toast.info(`Reviewing conflicts: ${suggestion.title}`);
+                              console.log('Review conflicts clicked:', suggestion.title);
+                            }}
                           >
                             {suggestion.action} →
                           </Button>
@@ -214,6 +223,10 @@ export function AIPanel({ suggestions }: AIPanelProps) {
                             variant="ghost"
                             className="h-auto p-0 hover:underline text-xs"
                             style={{ color: 'var(--primary)', fontWeight: 'var(--font-weight-medium)' }}
+                            onClick={() => {
+                              toast.info(`Viewing details: ${suggestion.title}`);
+                              console.log('View details clicked:', suggestion.title);
+                            }}
                           >
                             {suggestion.action} →
                           </Button>
@@ -287,6 +300,10 @@ export function AIPanel({ suggestions }: AIPanelProps) {
           size="sm"
           className="w-full h-8 text-xs font-medium justify-center"
           style={{ color: 'var(--muted-foreground)' }}
+          onClick={() => {
+            toast.info("Opening help documentation");
+            console.log('Why flagged? Learn more clicked');
+          }}
         >
           Why flagged? Learn more →
         </Button>

@@ -3,14 +3,24 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, CheckSquare, Users, Shield, 
   FileCheck, AlertTriangle, BarChart3, Boxes, Settings,
-  Menu, X, Sun, Moon, Search, Bell, ChevronDown
+  Menu, X, Sun, Moon, Search, Bell, ChevronDown, User, 
+  LogOut, Settings as SettingsIcon
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { useUser, Permission } from '../contexts/UserContext';
 import { RoleSwitcher } from './RoleSwitcher';
+import { toast } from 'sonner';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -68,18 +78,26 @@ export function AppShell({ children }: AppShellProps) {
         backgroundColor: 'var(--sidebar)',
         borderColor: 'var(--border)'
       }}>
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b" style={{ borderColor: 'var(--border)' }}>
+        {/* Enhanced Logo */}
+        <div className="h-18 flex items-center px-6 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shadow-sm" style={{ 
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)'
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105" style={{ 
+              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
             }}>
-              <Shield className="w-5 h-5 text-white" />
+              <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-semibold tracking-tight" style={{ 
-              fontSize: 'var(--text-md)',
-              color: 'var(--text)'
-            }}>IAM Platform</span>
+            <div>
+              <span className="font-bold tracking-tight block" style={{ 
+                fontSize: 'var(--text-lg)',
+                color: 'var(--text)',
+                lineHeight: '1.2'
+              }}>IAM Platform</span>
+              <span className="text-xs font-medium" style={{ 
+                color: 'var(--muted-foreground)',
+                letterSpacing: '0.05em'
+              }}>Identity Governance</span>
+            </div>
           </div>
         </div>
 
@@ -92,29 +110,37 @@ export function AppShell({ children }: AppShellProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className="group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ease-out relative"
+                className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ease-out relative"
                 style={{
                   backgroundColor: active ? 'var(--primary)' : 'transparent',
                   color: active ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
-                  fontWeight: active ? 'var(--font-weight-medium)' : 'var(--font-weight-normal)',
+                  fontWeight: active ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
                   fontSize: 'var(--text-body)',
-                  boxShadow: active ? 'var(--shadow-sm)' : 'none'
+                  boxShadow: active ? 'var(--shadow-md)' : 'none',
+                  border: active ? '1px solid var(--primary)' : '1px solid transparent'
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
                     e.currentTarget.style.backgroundColor = 'var(--accent)';
                     e.currentTarget.style.color = 'var(--accent-foreground)';
+                    e.currentTarget.style.transform = 'translateX(2px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!active) {
                     e.currentTarget.style.backgroundColor = 'transparent';
                     e.currentTarget.style.color = 'var(--muted-foreground)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                    e.currentTarget.style.boxShadow = 'none';
                   }
                 }}
               >
-                <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={active ? 2.5 : 2} />
+                <Icon className="w-[20px] h-[20px] flex-shrink-0 transition-all duration-200" strokeWidth={active ? 2.5 : 2} />
                 <span className="truncate">{item.name}</span>
+                {active && (
+                  <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white opacity-80"></div>
+                )}
               </Link>
             );
           })}
@@ -122,38 +148,137 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* User Profile */}
         <div className="p-4 border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-150" 
-            style={{ backgroundColor: 'var(--accent)' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--accent)';
-            }}
-          >
-            <Avatar className="w-9 h-9 ring-2 ring-border">
-              <AvatarFallback style={{ 
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                color: 'white',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 'var(--font-weight-semibold)'
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-150" 
+                style={{ backgroundColor: 'var(--accent)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--accent)';
+                }}
+              >
+                <Avatar className="w-9 h-9 ring-2 ring-border">
+                  <AvatarFallback style={{ 
+                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                    color: 'white',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--font-weight-semibold)'
+                  }}>
+                    {user.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate" style={{ 
+                    fontSize: 'var(--text-body)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)'
+                  }}>{user.name}</div>
+                  <div className="truncate" style={{ 
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--muted-foreground)'
+                  }}>{user.department}</div>
+                </div>
+                <ChevronDown className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end"
+              side="top"
+              style={{ 
+                width: '240px',
+                backgroundColor: 'var(--popover)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                padding: '8px',
+                boxShadow: 'var(--shadow-lg)',
+                marginBottom: '8px'
+              }}
+            >
+              <DropdownMenuLabel style={{ 
+                fontSize: '11px',
+                color: 'var(--muted-foreground)',
+                textTransform: 'uppercase',
+                fontWeight: '600',
+                letterSpacing: '0.05em',
+                padding: '8px 12px 4px'
               }}>
-                {user.name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="truncate" style={{ 
-                fontSize: 'var(--text-body)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--text)'
-              }}>{user.name}</div>
-              <div className="truncate" style={{ 
-                fontSize: 'var(--text-sm)',
-                color: 'var(--muted-foreground)'
-              }}>{user.department}</div>
-            </div>
-            <ChevronDown className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-          </div>
+                Account
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator style={{ 
+                backgroundColor: 'var(--border)',
+                margin: '8px 0'
+              }} />
+              
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.info("Profile view coming soon!", {
+                    description: "User profile management will be available in a future update."
+                  });
+                }}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '4px',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <User className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>View Profile</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.info("Settings opened!", {
+                    description: "Redirecting to account settings..."
+                  });
+                }}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '4px',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <SettingsIcon className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>Account Settings</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator style={{ 
+                backgroundColor: 'var(--border)',
+                margin: '8px 0'
+              }} />
+
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.success("Signed out successfully!", {
+                    description: "You have been logged out of the system."
+                  });
+                }}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <LogOut className="w-4 h-4" style={{ color: 'var(--destructive)' }} />
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--destructive)' }}>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 

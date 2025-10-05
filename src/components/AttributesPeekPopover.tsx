@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Copy, Check, MoreHorizontal } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface AttributesPeekPopoverProps {
   attributes: Record<string, any>;

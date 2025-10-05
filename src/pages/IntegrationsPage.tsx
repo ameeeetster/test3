@@ -16,7 +16,7 @@ import { Badge } from '../components/ui/badge';
 import { IntegrationCard, Integration } from '../components/IntegrationCard';
 import { IntegrationDrawer } from '../components/IntegrationDrawer';
 import { FilterChip } from '../components/FilterChip';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { IntegrationDetailPage } from './IntegrationDetailPage';
 import { mockIntegrationInstances, type IntegrationInstance } from '../data/integration-instances';
 

@@ -55,7 +55,7 @@ export function StatCard({
 
   return (
     <Card 
-      className="group p-5 transition-all duration-150 cursor-pointer"
+      className="group p-6 transition-all duration-200 cursor-pointer hover:scale-[1.02]"
       style={{ 
         backgroundColor: 'var(--card)',
         border: '1px solid var(--border)',
@@ -63,82 +63,94 @@ export function StatCard({
         boxShadow: 'var(--shadow-sm)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-        e.currentTarget.style.transform = 'translateY(-1px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.borderColor = 'var(--primary)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
         e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.borderColor = 'var(--border)';
       }}
     >
-      {/* Header: Title + Icon */}
-      <div className="flex items-start justify-between mb-3">
+      {/* Enhanced Header: Title + Icon */}
+      <div className="flex items-start justify-between mb-4">
         <p style={{ 
           fontSize: 'var(--text-sm)',
           color: 'var(--muted-foreground)',
           fontWeight: 'var(--font-weight-medium)',
-          letterSpacing: '-0.005em'
+          letterSpacing: '-0.005em',
+          lineHeight: 'var(--line-height-snug)'
         }}>
           {title}
         </p>
         <div 
-          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
           style={{ 
-            backgroundColor: iconColor ? `${iconColor}10` : 'color-mix(in srgb, var(--primary) 8%, transparent)',
-            opacity: 0.8
+            backgroundColor: iconColor ? `${iconColor}15` : 'color-mix(in srgb, var(--primary) 12%, transparent)',
+            border: `1px solid ${iconColor ? `${iconColor}20` : 'color-mix(in srgb, var(--primary) 15%, transparent)'}`
           }}
         >
           <Icon 
-            className="w-[18px] h-[18px]" 
+            className="w-[20px] h-[20px]" 
             style={{ color: iconColor || 'var(--primary)' }}
-            strokeWidth={2}
+            strokeWidth={2.5}
           />
         </div>
       </div>
       
-      {/* Value */}
+      {/* Enhanced Value */}
       <h3 
-        className="tracking-tight"
+        className="tracking-tight mb-3"
         style={{ 
-          fontSize: '32px',
-          lineHeight: '1.2',
-          fontWeight: 'var(--font-weight-semibold)',
+          fontSize: '36px',
+          lineHeight: '1.1',
+          fontWeight: 'var(--font-weight-bold)',
           color: 'var(--text)',
-          marginBottom: '8px'
+          background: 'linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
         }}
       >
         {value}
       </h3>
       
-      {/* Delta chip */}
+      {/* Enhanced Delta chip */}
       {change && (
-        <div className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 mb-3" style={{ 
-          fontSize: '11px',
+        <div className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 mb-4" style={{ 
+          fontSize: '12px',
           color: getChangeColor(),
           backgroundColor: changeType === 'positive' 
             ? 'var(--success-bg)' 
             : changeType === 'negative' 
             ? 'var(--danger-bg)' 
             : 'var(--accent)',
-          fontWeight: 'var(--font-weight-semibold)'
+          fontWeight: 'var(--font-weight-semibold)',
+          border: `1px solid ${changeType === 'positive' 
+            ? 'var(--success-border)' 
+            : changeType === 'negative' 
+            ? 'var(--danger-border)' 
+            : 'var(--border)'}`
         }}>
           {getTrendIcon()}
           <span>{change}</span>
         </div>
       )}
       
-      {/* Sparkline */}
+      {/* Enhanced Sparkline */}
       {sparklineData && sparklineData.length > 0 && (
-        <div style={{ height: '32px', marginTop: 'auto' }}>
+        <div style={{ height: '40px', marginTop: 'auto' }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <Line 
                 type="monotone" 
                 dataKey="value" 
                 stroke={iconColor || 'var(--primary)'} 
-                strokeWidth={1.5}
+                strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}
+                strokeDasharray="none"
               />
             </LineChart>
           </ResponsiveContainer>

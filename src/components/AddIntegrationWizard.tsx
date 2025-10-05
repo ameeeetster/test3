@@ -12,7 +12,7 @@ import { WizardSummary } from './WizardSummary';
 import { WizardFooter } from './WizardFooter';
 import { getConnectorById, defaultMappings } from '../data/connectors';
 import { suggestInstanceName } from '../data/integration-instances';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface AddIntegrationWizardProps {
   onClose: () => void;

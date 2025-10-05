@@ -11,7 +11,7 @@ import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { Slider } from '../ui/slider';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 type ReviewType = 'User' | 'Application' | 'Role' | 'Privileged' | 'SoD';
 

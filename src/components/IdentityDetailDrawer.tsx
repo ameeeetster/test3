@@ -15,7 +15,7 @@ import { AccessItem } from './InlineRevokeRow';
 import { IdentityActivityTimeline, ActivityEvent } from './IdentityActivityTimeline';
 import { AIActionSuggestion, AISuggestion } from './AIActionSuggestion';
 import { AIInsightCard, AIInsight } from './AIInsightCard';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Identity {
   id: string;

@@ -21,7 +21,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   Plus, Search, Filter, Download, Upload, MoreVertical, 
   Shield, Users, Package, AlertTriangle, TrendingUp, TrendingDown,

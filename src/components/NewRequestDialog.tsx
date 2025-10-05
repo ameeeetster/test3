@@ -7,7 +7,7 @@ import { FormCombobox } from './FormCombobox';
 import { FormTextarea } from './FormTextarea';
 import { Calendar, AlertCircle, CheckCircle, Shield, ExternalLink, Loader2, Database, Cloud, Briefcase, DollarSign, Users } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface NewRequestDialogProps {
   open: boolean;

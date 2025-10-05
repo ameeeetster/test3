@@ -10,6 +10,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useUser } from '../contexts/UserContext';
 import { EndUserDashboard } from './home/EndUserDashboard';
 import { ApproverDashboard } from './home/ApproverDashboard';
+import { toast } from 'sonner';
 
 const requestsData = [
   { day: 'Day 1', requests: 12 },
@@ -126,10 +127,10 @@ export function HomePage() {
   const provisionsSparkline = [8, 6, 5, 4, 3, 2, 2];
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1280px] mx-auto">
-      {/* Critical Alert Bar */}
+    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+      {/* Enhanced Alert Bar */}
       {showAlert && (
-        <div className="mb-6">
+        <div className="mb-8">
           <AlertBar
             variant="danger"
             title="3 Segregation of Duties conflicts detected"
@@ -143,32 +144,46 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <div className="mb-8">
-        <h1 
-          className="tracking-tight"
-          style={{ 
-            fontSize: '32px',
-            lineHeight: '1.3',
-            fontWeight: 'var(--font-weight-semibold)',
-            color: 'var(--text)',
-            marginBottom: '6px'
-          }}
-        >
-          Welcome back, John
-        </h1>
-        <p style={{ 
-          fontSize: 'var(--text-body)',
-          color: 'var(--muted-foreground)',
-          lineHeight: 'var(--line-height-normal)',
-          opacity: 0.85
-        }}>
-          Here's what's happening with your identity platform today
-        </p>
+      {/* Enhanced Hero Section */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 
+              className="tracking-tight"
+              style={{ 
+                fontSize: '36px',
+                lineHeight: '1.2',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)',
+                marginBottom: '8px'
+              }}
+            >
+              Welcome back, {user.name}
+            </h1>
+            <p style={{ 
+              fontSize: 'var(--text-lg)',
+              color: 'var(--text-secondary)',
+              lineHeight: 'var(--line-height-normal)'
+            }}>
+              Here's what's happening with your identity governance today
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Last updated
+              </div>
+              <div className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                {new Date().toLocaleTimeString()}
+              </div>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          </div>
+        </div>
       </div>
 
-      {/* KPI Cards - 12-column grid aligned */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Enhanced KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard
           title="Pending Approvals"
           value={24}
@@ -211,54 +226,53 @@ export function HomePage() {
         />
       </div>
 
-      {/* Charts & AI Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Charts */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Requests Chart */}
-          <Card className="p-5" style={{ 
+      {/* Enhanced Charts & AI Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        {/* Charts Section */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Enhanced Requests Chart */}
+          <Card className="p-6 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-lg)',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div className="flex items-start justify-between mb-5">
+            <div className="flex items-start justify-between mb-6">
               <div>
-                <h3 className="mb-1 tracking-tight" style={{ 
-                  fontSize: '18px',
+                <h3 className="mb-2 tracking-tight" style={{ 
+                  fontSize: 'var(--text-xl)',
                   fontWeight: 'var(--font-weight-semibold)',
                   color: 'var(--text)'
                 }}>
-                  Access Requests
+                  Access Requests Trend
                 </h3>
                 <p style={{ 
                   fontSize: 'var(--text-sm)',
                   color: 'var(--muted-foreground)'
                 }}>
-                  Last 30 days
+                  Daily request volume over the last 30 days
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-md px-2.5 py-1" style={{
+              <div className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5" style={{
                 backgroundColor: 'var(--success-bg)',
                 border: '1px solid var(--success-border)'
               }}>
                 <span className="text-xs" style={{ fontSize: '10px' }}>▲</span>
                 <div className="text-right">
                   <div className="tracking-tight" style={{ 
-                    fontSize: '20px',
+                    fontSize: '18px',
                     fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--text)',
+                    color: 'var(--success)',
                     lineHeight: '1.2'
                   }}>
                     161
                   </div>
                   <div style={{ 
                     fontSize: '11px',
-                    color: 'rgb(21 128 61 / 1)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    lineHeight: '1.2'
+                    color: 'var(--success)',
+                    fontWeight: 'var(--font-weight-medium)'
                   }}>
-                    +12.5%
+                    +12% vs last month
                   </div>
                 </div>
               </div>
@@ -421,6 +435,12 @@ export function HomePage() {
                 style={{ 
                   fontWeight: 'var(--font-weight-medium)'
                 }}
+                onClick={() => {
+                  toast.info("Navigating to approvals page");
+                  console.log('View all approvals clicked');
+                  // In a real app, this would navigate to /approvals
+                  // window.location.href = '/approvals';
+                }}
               >
                 View all →
               </Button>
@@ -494,6 +514,10 @@ export function HomePage() {
                         paddingLeft: '12px',
                         paddingRight: '12px'
                       }}
+                      onClick={() => {
+                        toast.success(`Approved request for ${task.user}`);
+                        console.log('Approved:', task);
+                      }}
                     >
                       Approve
                     </Button>
@@ -503,6 +527,10 @@ export function HomePage() {
                       className="h-8 text-xs hover:bg-accent transition-all duration-150"
                       style={{ 
                         fontWeight: 'var(--font-weight-medium)'
+                      }}
+                      onClick={() => {
+                        toast.error(`Denied request for ${task.user}`);
+                        console.log('Denied:', task);
                       }}
                     >
                       Deny

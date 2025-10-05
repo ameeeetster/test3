@@ -8,7 +8,9 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 import { FilterChip } from '../components/FilterChip';
-import { toast } from 'sonner@2.0.3';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../components/ui/sheet';
+import { Label } from '../components/ui/label';
+import { toast } from 'sonner';
 
 // Lazy load the heavy drawer component
 const EnhancedApprovalDrawer = lazy(() => 
@@ -213,11 +215,28 @@ export function ApprovalsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<{ label: string; value: string }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [riskFilters, setRiskFilters] = useState<string[]>([]);
+  const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
 
-  // Filter requests based on tab and search
+  // Filter requests based on tab, search, and filters
   const filteredRequests = mockRequests.filter(req => {
+    // Tab filters
     if (selectedTab === 'pending' && req.status !== 'Pending') return false;
     if (selectedTab === 'high-risk' && !['High', 'Critical'].includes(req.risk)) return false;
+    
+    // Status filters
+    if (statusFilters.length > 0 && !statusFilters.includes(req.status)) return false;
+    
+    // Risk filters
+    if (riskFilters.length > 0 && !riskFilters.includes(req.risk)) return false;
+    
+    // Department filters
+    if (departmentFilters.length > 0 && !departmentFilters.includes(req.requester.department)) return false;
+    
+    // Search query
     if (searchQuery && !req.id.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !req.requester.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !req.item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -288,6 +307,37 @@ export function ApprovalsPage() {
     setSelectedRequests(new Set());
   };
 
+  // Filter helper functions
+  const activeFiltersCount = statusFilters.length + riskFilters.length + departmentFilters.length;
+
+  const toggleFilter = (category: 'status' | 'risk' | 'department', value: string) => {
+    const setters = {
+      status: setStatusFilters,
+      risk: setRiskFilters,
+      department: setDepartmentFilters,
+    };
+    const states = {
+      status: statusFilters,
+      risk: riskFilters,
+      department: departmentFilters,
+    };
+    
+    const setter = setters[category];
+    const state = states[category];
+    
+    if (state.includes(value)) {
+      setter(state.filter(item => item !== value));
+    } else {
+      setter([...state, value]);
+    }
+  };
+
+  const clearAllFilters = () => {
+    setStatusFilters([]);
+    setRiskFilters([]);
+    setDepartmentFilters([]);
+  };
+
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'Critical': return 'var(--danger)';
@@ -352,17 +402,17 @@ export function ApprovalsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => setShowFilters(true)}
                   className="gap-2"
                 >
                   <Filter className="w-4 h-4" />
                   Filters
-                  {filters.length > 0 && (
+                  {activeFiltersCount > 0 && (
                     <Badge 
                       className="ml-1 px-1.5 py-0.5 h-5"
                       style={{ backgroundColor: 'var(--primary)', color: 'white' }}
                     >
-                      {filters.length}
+                      {activeFiltersCount}
                     </Badge>
                   )}
                 </Button>
@@ -689,6 +739,232 @@ export function ApprovalsPage() {
           />
         </Suspense>
       )}
+
+      {/* Filters Panel */}
+      <Sheet open={showFilters} onOpenChange={setShowFilters}>
+        <SheetContent style={{ 
+          backgroundColor: 'var(--bg)', 
+          borderLeft: '1px solid var(--border)', 
+          width: '100%', 
+          maxWidth: '400px',
+          padding: '24px'
+        }}>
+          <SheetHeader style={{ marginBottom: '24px' }}>
+            <SheetTitle style={{ color: 'var(--text)', fontSize: '20px', fontWeight: '600' }}>
+              Filters
+            </SheetTitle>
+            <SheetDescription style={{ fontSize: '13px' }}>
+              Filter approvals by status, risk level, and department
+            </SheetDescription>
+            {activeFiltersCount > 0 && (
+              <div className="pt-2">
+                <Button 
+                  variant="ghost" 
+                  onClick={clearAllFilters}
+                  style={{ 
+                    height: '32px', 
+                    fontSize: '13px',
+                    color: 'var(--primary)'
+                  }}
+                >
+                  Clear All ({activeFiltersCount})
+                </Button>
+              </div>
+            )}
+          </SheetHeader>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {/* Status Filters */}
+            <div>
+              <h3 style={{ 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: 'var(--text)', 
+                marginBottom: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Status
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {['Pending', 'Approved', 'Rejected'].map((status) => (
+                  <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
+                    <Checkbox
+                      id={`status-${status}`}
+                      checked={statusFilters.includes(status)}
+                      onCheckedChange={() => toggleFilter('status', status)}
+                    />
+                    <Label 
+                      htmlFor={`status-${status}`}
+                      style={{ 
+                        fontSize: '13px',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        flex: 1
+                      }}
+                    >
+                      {status}
+                    </Label>
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: 'var(--muted-foreground)',
+                      backgroundColor: 'var(--accent)',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {mockRequests.filter(req => req.status === status).length}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Risk Level Filters */}
+            <div>
+              <h3 style={{ 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: 'var(--text)', 
+                marginBottom: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Risk Level
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {['Critical', 'High', 'Medium', 'Low'].map((risk) => (
+                  <div key={risk} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
+                    <Checkbox
+                      id={`risk-${risk}`}
+                      checked={riskFilters.includes(risk)}
+                      onCheckedChange={() => toggleFilter('risk', risk)}
+                    />
+                    <Label 
+                      htmlFor={`risk-${risk}`}
+                      style={{ 
+                        fontSize: '13px',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {getRiskIcon(risk)}
+                      {risk}
+                    </Label>
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: 'var(--muted-foreground)',
+                      backgroundColor: 'var(--accent)',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {mockRequests.filter(req => req.risk === risk).length}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Department Filters */}
+            <div>
+              <h3 style={{ 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: 'var(--text)', 
+                marginBottom: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Department
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {['Engineering', 'Finance', 'Sales', 'HR', 'Security'].map((dept) => (
+                  <div key={dept} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 0' }}>
+                    <Checkbox
+                      id={`dept-${dept}`}
+                      checked={departmentFilters.includes(dept)}
+                      onCheckedChange={() => toggleFilter('department', dept)}
+                    />
+                    <Label 
+                      htmlFor={`dept-${dept}`}
+                      style={{ 
+                        fontSize: '13px',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        flex: 1
+                      }}
+                    >
+                      {dept}
+                    </Label>
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: 'var(--muted-foreground)',
+                      backgroundColor: 'var(--accent)',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {mockRequests.filter(req => req.requester.department === dept).length}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Filters Summary */}
+          {activeFiltersCount > 0 && (
+            <div style={{ 
+              marginTop: '32px',
+              padding: '16px',
+              backgroundColor: 'var(--accent)',
+              borderRadius: '10px',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ 
+                fontSize: '11px', 
+                fontWeight: '600', 
+                color: 'var(--muted-foreground)',
+                marginBottom: '8px',
+                textTransform: 'uppercase'
+              }}>
+                Active Filters
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {statusFilters.map(filter => (
+                  <Badge 
+                    key={filter}
+                    variant="secondary"
+                    style={{ fontSize: '11px', height: '24px' }}
+                  >
+                    Status: {filter}
+                  </Badge>
+                ))}
+                {riskFilters.map(filter => (
+                  <Badge 
+                    key={filter}
+                    variant="secondary"
+                    style={{ fontSize: '11px', height: '24px' }}
+                  >
+                    Risk: {filter}
+                  </Badge>
+                ))}
+                {departmentFilters.map(filter => (
+                  <Badge 
+                    key={filter}
+                    variant="secondary"
+                    style={{ fontSize: '11px', height: '24px' }}
+                  >
+                    Dept: {filter}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

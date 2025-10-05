@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { 
   ArrowLeft, ChevronDown, Save, Package, Users, AlertTriangle, 
   Shield, Calendar, Eye, TrendingUp, Activity, GitBranch,

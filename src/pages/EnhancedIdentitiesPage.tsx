@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Filter, Plus, Download, Lock, XCircle, FileCheck, X } from 'lucide-react';
+import { Search, Filter, Plus, Download, Lock, XCircle, FileCheck, X, User, Mail, Phone, Building, Calendar, Shield, Key } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -12,7 +12,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { toast } from 'sonner@2.0.3';
+import { Textarea } from '../components/ui/textarea';
+import { Switch } from '../components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
+import { toast } from 'sonner';
 
 // Mock data with enhanced fields
 const identitiesData: Identity[] = [
@@ -140,10 +144,128 @@ export function EnhancedIdentitiesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // User creation dialog state
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [userFormData, setUserFormData] = useState({
+    // Personal Information
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    // Organizational
+    department: '',
+    manager: '',
+    jobTitle: '',
+    // Access Control
+    initialRoles: [] as string[],
+    status: 'active',
+    riskLevel: 'low',
+    // Account Settings
+    username: '',
+    password: '',
+    passwordConfirm: '',
+    accountExpiration: '',
+    sendWelcomeEmail: true,
+    requirePasswordChange: true,
+    // Additional
+    notes: ''
+  });
 
   // Helper function to normalize name to URL-friendly format
   const normalizeNameToId = (name: string) => {
     return name.toLowerCase().replace(/\\s+/g, '-');
+  };
+
+  // User creation form handlers
+  const handleFormFieldChange = (field: string, value: any) => {
+    setUserFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCreateUser = async () => {
+    setIsCreatingUser(true);
+    
+    try {
+      // Log the action for audit trail
+      console.log('User creation initiated', {
+        timestamp: new Date().toISOString(),
+        action: 'create_user',
+        user: 'current_user', // In real implementation, get from context
+        correlationId: `create-user-${Date.now()}`,
+        userData: {
+          name: `${userFormData.firstName} ${userFormData.lastName}`,
+          email: userFormData.email,
+          department: userFormData.department,
+          status: userFormData.status,
+          riskLevel: userFormData.riskLevel
+        }
+      });
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Success feedback
+      toast.success("User created successfully!", {
+        description: `${userFormData.firstName} ${userFormData.lastName} has been added to the system.`,
+        duration: 5000
+      });
+
+      // Close dialog and reset form
+      setShowCreateUserDialog(false);
+      setUserFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        department: '',
+        manager: '',
+        jobTitle: '',
+        initialRoles: [],
+        status: 'active',
+        riskLevel: 'low',
+        username: '',
+        password: '',
+        passwordConfirm: '',
+        accountExpiration: '',
+        sendWelcomeEmail: true,
+        requirePasswordChange: true,
+        notes: ''
+      });
+
+    } catch (error) {
+      toast.error("Failed to create user", {
+        description: "Please check the form data and try again.",
+        duration: 5000
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const resetForm = () => {
+    setUserFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      department: '',
+      manager: '',
+      jobTitle: '',
+      initialRoles: [],
+      status: 'active',
+      riskLevel: 'low',
+      username: '',
+      password: '',
+      passwordConfirm: '',
+      accountExpiration: '',
+      sendWelcomeEmail: true,
+      requirePasswordChange: true,
+      notes: ''
+    });
   };
 
   // Effect to handle userId from URL params
@@ -288,7 +410,21 @@ export function EnhancedIdentitiesPage() {
           }}>
             Identities
           </h1>
-          <Button style={{ backgroundColor: 'var(--primary)', color: 'white' }}>
+          <Button 
+            style={{ backgroundColor: 'var(--primary)', color: 'white' }}
+            onClick={() => {
+              // Log the action for audit trail
+              console.log('Add User button clicked', {
+                timestamp: new Date().toISOString(),
+                action: 'open_create_user_dialog',
+                user: 'current_user', // In real implementation, get from context
+                correlationId: `add-user-${Date.now()}`
+              });
+              
+              // Open the user creation dialog
+              setShowCreateUserDialog(true);
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add User
           </Button>
@@ -538,6 +674,316 @@ export function EnhancedIdentitiesPage() {
         open={!!selectedUser}
         onClose={() => handleUserSelect(null)}
       />
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Create New User
+            </DialogTitle>
+            <DialogDescription>
+              Add a new user to the identity management system. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Personal Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="w-4 h-4" />
+                  Personal Information
+                </CardTitle>
+                <CardDescription>
+                  Basic personal details for the new user
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Enter first name"
+                      value={userFormData.firstName}
+                      onChange={(e) => handleFormFieldChange('firstName', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Enter last name"
+                      value={userFormData.lastName}
+                      onChange={(e) => handleFormFieldChange('lastName', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="user@company.com"
+                        className="pl-10"
+                        value={userFormData.email}
+                        onChange={(e) => handleFormFieldChange('email', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        className="pl-10"
+                        value={userFormData.phone}
+                        onChange={(e) => handleFormFieldChange('phone', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Organizational Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Building className="w-4 h-4" />
+                  Organizational Information
+                </CardTitle>
+                <CardDescription>
+                  Department, manager, and job details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department *</Label>
+                    <Select value={userFormData.department} onValueChange={(value) => handleFormFieldChange('department', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="it">IT</SelectItem>
+                        <SelectItem value="sales">Sales</SelectItem>
+                        <SelectItem value="hr">HR</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="engineering">Engineering</SelectItem>
+                        <SelectItem value="operations">Operations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="manager">Manager</Label>
+                    <Select value={userFormData.manager} onValueChange={(value) => handleFormFieldChange('manager', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alice-johnson">Alice Johnson</SelectItem>
+                        <SelectItem value="mike-chen">Mike Chen</SelectItem>
+                        <SelectItem value="sarah-patel">Sarah Patel</SelectItem>
+                        <SelectItem value="jennifer-smith">Jennifer Smith</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <Input
+                    id="jobTitle"
+                    placeholder="Enter job title"
+                    value={userFormData.jobTitle}
+                    onChange={(e) => handleFormFieldChange('jobTitle', e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Access Control */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Shield className="w-4 h-4" />
+                  Access Control
+                </CardTitle>
+                <CardDescription>
+                  Initial roles, status, and risk level
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status *</Label>
+                    <Select value={userFormData.status} onValueChange={(value) => handleFormFieldChange('status', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="riskLevel">Risk Level</Label>
+                    <Select value={userFormData.riskLevel} onValueChange={(value) => handleFormFieldChange('riskLevel', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select risk level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Account Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Key className="w-4 h-4" />
+                  Account Settings
+                </CardTitle>
+                <CardDescription>
+                  Username, password, and account preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username *</Label>
+                  <Input
+                    id="username"
+                    placeholder="Enter username"
+                    value={userFormData.username}
+                    onChange={(e) => handleFormFieldChange('username', e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password *</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter password"
+                      value={userFormData.password}
+                      onChange={(e) => handleFormFieldChange('password', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="passwordConfirm">Confirm Password *</Label>
+                    <Input
+                      id="passwordConfirm"
+                      type="password"
+                      placeholder="Confirm password"
+                      value={userFormData.passwordConfirm}
+                      onChange={(e) => handleFormFieldChange('passwordConfirm', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountExpiration">Account Expiration</Label>
+                  <Input
+                    id="accountExpiration"
+                    type="date"
+                    value={userFormData.accountExpiration}
+                    onChange={(e) => handleFormFieldChange('accountExpiration', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="sendWelcomeEmail">Send Welcome Email</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Send a welcome email with login instructions
+                      </p>
+                    </div>
+                    <Switch
+                      id="sendWelcomeEmail"
+                      checked={userFormData.sendWelcomeEmail}
+                      onCheckedChange={(checked) => handleFormFieldChange('sendWelcomeEmail', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="requirePasswordChange">Require Password Change</Label>
+                      <p className="text-sm text-muted-foreground">
+                        User must change password on first login
+                      </p>
+                    </div>
+                    <Switch
+                      id="requirePasswordChange"
+                      checked={userFormData.requirePasswordChange}
+                      onCheckedChange={(checked) => handleFormFieldChange('requirePasswordChange', checked)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Additional Notes</CardTitle>
+                <CardDescription>
+                  Any additional information about this user
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Enter any additional notes or comments..."
+                  value={userFormData.notes}
+                  onChange={(e) => handleFormFieldChange('notes', e.target.value)}
+                  rows={3}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowCreateUserDialog(false);
+              resetForm();
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateUser}
+              disabled={isCreatingUser || !userFormData.firstName || !userFormData.lastName || !userFormData.email || !userFormData.department || !userFormData.username || !userFormData.password}
+              style={{ backgroundColor: 'var(--primary)', color: 'white' }}
+            >
+              {isCreatingUser ? (
+                <>
+                  <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Creating User...
+                </>
+              ) : (
+                <>
+                  <User className="w-4 h-4 mr-2" />
+                  Create User
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
