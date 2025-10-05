@@ -20,26 +20,9 @@ import { IntegrationDetailPage } from './pages/IntegrationDetailPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { ReviewsWorkbenchPage } from './pages/ReviewsWorkbenchPage';
 import { CreateReviewWizard } from './components/reviews/CreateReviewWizard';
-
-// Placeholder pages
-
-function ReportsPage() {
-  return (
-    <div className="p-4 lg:p-6 max-w-[1440px] mx-auto">
-      <h1 style={{ 
-        fontSize: 'var(--text-display)',
-        lineHeight: 'var(--line-height-display)',
-        fontWeight: 'var(--font-weight-semibold)',
-        color: 'var(--text)'
-      }}>
-        Reports & Analytics
-      </h1>
-      <p style={{ fontSize: 'var(--text-body)', color: 'var(--muted)', marginTop: '8px' }}>
-        Generate compliance and audit reports
-      </p>
-    </div>
-  );
-}
+import { ReportsPage } from './pages/ReportsPage';
+import { PoliciesPage } from './pages/PoliciesPage';
+import { LifecyclePage } from './pages/LifecyclePage';
 
 export default function App() {
   return (
@@ -70,6 +53,8 @@ export default function App() {
                 <Route path="/reviews/:campaignId/workbench" element={<ReviewsWorkbenchPage />} />
                 <Route path="/risk" element={<RiskPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/policies" element={<PoliciesPage />} />
+                <Route path="/lifecycle" element={<LifecyclePage />} />
                 <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/integrations/new" element={<AddIntegrationWizard onClose={() => window.location.href = '/integrations'} />} />
                 <Route path="/integrations/:id" element={<IntegrationDetailPage />} />

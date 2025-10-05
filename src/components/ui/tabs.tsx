@@ -27,15 +27,11 @@ const TabsList = React.forwardRef<
       ref={ref}
       data-slot="tabs-list"
       className={cn(
-        "bg-slate-50/60 dark:bg-white/[0.03] text-muted-foreground",
-        "border border-slate-200 dark:border-slate-800",
-        "rounded-2xl p-2 shadow-sm backdrop-blur",
-        "flex md:grid overflow-x-auto md:overflow-visible",
-        "gap-2 md:gap-3",
-        "md:grid-cols-6",
-        "scroll-smooth snap-x snap-mandatory",
-        "[-ms-overflow-style:none] [scrollbar-width:none]",
-        "[&::-webkit-scrollbar]:hidden",
+        "bg-slate-100 dark:bg-slate-800/50 text-muted-foreground",
+        "border border-slate-300 dark:border-slate-700",
+        "rounded-lg p-1",
+        "inline-flex items-center",
+        "gap-1",
         className,
       )}
       {...props}
@@ -52,26 +48,22 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "snap-start inline-flex items-center justify-center",
-        "whitespace-nowrap md:whitespace-normal text-sm",
-        "min-w-[140px] md:min-w-0 md:flex-1",
-        "px-4 md:px-5 py-2.5 md:py-3 rounded-xl",
-        "transition-all duration-200",
+        "inline-flex items-center justify-center",
+        "whitespace-nowrap text-sm",
+        "px-4 py-2 rounded-md",
+        "transition-all duration-150",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-0",
-        // Active state - VERY prominent
-        "data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950",
+        // Active state
+        "data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800",
         "data-[state=active]:text-slate-900 dark:data-[state=active]:text-white",
-        "data-[state=active]:shadow-[0_0_0_1px_rgba(79,70,229,0.1),0_8px_16px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.06)]",
-        "dark:data-[state=active]:shadow-[0_0_0_1px_rgba(99,102,241,0.2),0_8px_16px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.3)]",
-        "data-[state=active]:scale-[1.02]",
-        "[&[data-state=active]]:font-semibold",
+        "data-[state=active]:shadow-sm",
+        "[&[data-state=active]]:font-medium",
         // Inactive state
         "font-medium",
-        "text-slate-500 dark:text-slate-500",
-        "hover:bg-white/70 dark:hover:bg-white/10",
-        "hover:text-slate-700 dark:hover:text-slate-300",
+        "text-slate-600 dark:text-slate-400",
+        "hover:text-slate-900 dark:hover:text-slate-200",
         "disabled:pointer-events-none disabled:opacity-50",
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

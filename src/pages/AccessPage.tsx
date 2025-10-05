@@ -16,6 +16,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '../components/ui/drawer';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -265,7 +266,13 @@ export function AccessPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<typeof mockRoles[0] | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filterCount, setFilterCount] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({
+    owner: [],
+    risk: [],
+    app: [],
+    updated: []
+  });
   
   // Role action dialogs
   const [editRoleDialog, setEditRoleDialog] = useState(false);
@@ -385,6 +392,39 @@ export function AccessPage() {
     setDecommissionDialog(false);
   };
 
+  const handleToggleFilter = (category: string, value: string) => {
+    setActiveFilters(prev => {
+      const current = prev[category] || [];
+      const hasValue = current.includes(value);
+      return {
+        ...prev,
+        [category]: hasValue
+          ? current.filter(v => v !== value)
+          : [...current, value]
+      };
+    });
+  };
+
+  const handleRemoveFilter = (category: string, value: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [category]: (prev[category] || []).filter(v => v !== value)
+    }));
+  };
+
+  const handleClearAllFilters = () => {
+    setActiveFilters({
+      owner: [],
+      risk: [],
+      app: [],
+      updated: []
+    });
+  };
+
+  const activeFilterCount = useMemo(() => {
+    return Object.values(activeFilters).flat().length;
+  }, [activeFilters]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 lg:p-6 max-w-[1320px] mx-auto w-full">
@@ -462,29 +502,117 @@ export function AccessPage() {
         {currentTab === 'roles' && (
           <div className="flex flex-col gap-4">
             {/* Toolbar */}
-            <div className="flex flex-col lg:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                <Input
-                  placeholder="Search roles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col lg:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                  <Input
+                    placeholder="Search roles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <Badge variant="secondary">{activeFilterCount}</Badge>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Filters</h4>
+                        {activeFilterCount > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearAllFilters}
+                            className="h-auto py-1 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Risk Level</Label>
+                          <div className="flex flex-col gap-2">
+                            {['Critical', 'High', 'Medium', 'Low'].map(risk => (
+                              <div key={risk} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`risk-${risk}`}
+                                  checked={activeFilters.risk?.includes(risk)}
+                                  onCheckedChange={() => handleToggleFilter('risk', risk)}
+                                />
+                                <Label htmlFor={`risk-${risk}`} className="text-sm cursor-pointer">
+                                  {risk}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Owner</Label>
+                          <div className="flex flex-col gap-2">
+                            {['Sarah Johnson', 'Michael Chen', 'Emily Davis', 'James Wilson'].map(owner => (
+                              <div key={owner} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`owner-${owner}`}
+                                  checked={activeFilters.owner?.includes(owner)}
+                                  onCheckedChange={() => handleToggleFilter('owner', owner)}
+                                />
+                                <Label htmlFor={`owner-${owner}`} className="text-sm cursor-pointer">
+                                  {owner}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Application</Label>
+                          <div className="flex flex-col gap-2">
+                            {['AWS', 'GitHub', 'Workday', 'QuickBooks', 'Salesforce'].map(app => (
+                              <div key={app} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`app-${app}`}
+                                  checked={activeFilters.app?.includes(app)}
+                                  onCheckedChange={() => handleToggleFilter('app', app)}
+                                />
+                                <Label htmlFor={`app-${app}`} className="text-sm cursor-pointer">
+                                  {app}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <FilterChip label="Owner" count={0} />
-                <FilterChip label="Risk" count={0} />
-                <FilterChip label="App" count={0} />
-                <FilterChip label="Updated" count={0} />
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filters
-                  {filterCount > 0 && (
-                    <Badge variant="secondary">{filterCount}</Badge>
+
+              {/* Active Filter Chips */}
+              {activeFilterCount > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(activeFilters).map(([category, values]) =>
+                    values.map(value => (
+                      <FilterChip
+                        key={`${category}-${value}`}
+                        label={value}
+                        onRemove={() => handleRemoveFilter(category, value)}
+                      />
+                    ))
                   )}
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Roles Table */}
@@ -640,26 +768,99 @@ export function AccessPage() {
         {currentTab === 'entitlements' && (
           <div className="flex flex-col gap-4">
             {/* Toolbar */}
-            <div className="flex flex-col lg:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                <Input
-                  placeholder="Search entitlements..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col lg:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                  <Input
+                    placeholder="Search entitlements..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <Badge variant="secondary">{activeFilterCount}</Badge>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Filters</h4>
+                        {activeFilterCount > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearAllFilters}
+                            className="h-auto py-1 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Risk Level</Label>
+                          <div className="flex flex-col gap-2">
+                            {['Critical', 'High', 'Medium', 'Low'].map(risk => (
+                              <div key={risk} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`risk-${risk}`}
+                                  checked={activeFilters.risk?.includes(risk)}
+                                  onCheckedChange={() => handleToggleFilter('risk', risk)}
+                                />
+                                <Label htmlFor={`risk-${risk}`} className="text-sm cursor-pointer">
+                                  {risk}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Application</Label>
+                          <div className="flex flex-col gap-2">
+                            {['AWS', 'Workday', 'Procurement', 'Splunk'].map(app => (
+                              <div key={app} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`app-${app}`}
+                                  checked={activeFilters.app?.includes(app)}
+                                  onCheckedChange={() => handleToggleFilter('app', app)}
+                                />
+                                <Label htmlFor={`app-${app}`} className="text-sm cursor-pointer">
+                                  {app}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <FilterChip label="App" count={0} />
-                <FilterChip label="Type" count={0} />
-                <FilterChip label="Owner" count={0} />
-                <FilterChip label="Risk" count={0} />
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filters
-                </Button>
-              </div>
+
+              {/* Active Filter Chips */}
+              {activeFilterCount > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(activeFilters).map(([category, values]) =>
+                    values.map(value => (
+                      <FilterChip
+                        key={`${category}-${value}`}
+                        label={value}
+                        onRemove={() => handleRemoveFilter(category, value)}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Entitlements Table */}
@@ -764,25 +965,81 @@ export function AccessPage() {
         {currentTab === 'applications' && (
           <div className="flex flex-col gap-4">
             {/* Toolbar */}
-            <div className="flex flex-col lg:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
-                <Input
-                  placeholder="Search applications..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col lg:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                  <Input
+                    placeholder="Search applications..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <Badge variant="secondary">{activeFilterCount}</Badge>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Filters</h4>
+                        {activeFilterCount > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearAllFilters}
+                            className="h-auto py-1 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-2 block">Risk Level</Label>
+                          <div className="flex flex-col gap-2">
+                            {['Critical', 'High', 'Medium', 'Low'].map(risk => (
+                              <div key={risk} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`risk-${risk}`}
+                                  checked={activeFilters.risk?.includes(risk)}
+                                  onCheckedChange={() => handleToggleFilter('risk', risk)}
+                                />
+                                <Label htmlFor={`risk-${risk}`} className="text-sm cursor-pointer">
+                                  {risk}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <FilterChip label="Category" count={0} />
-                <FilterChip label="Owner" count={0} />
-                <FilterChip label="Risk" count={0} />
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filters
-                </Button>
-              </div>
+
+              {/* Active Filter Chips */}
+              {activeFilterCount > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(activeFilters).map(([category, values]) =>
+                    values.map(value => (
+                      <FilterChip
+                        key={`${category}-${value}`}
+                        label={value}
+                        onRemove={() => handleRemoveFilter(category, value)}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Applications Grid */}

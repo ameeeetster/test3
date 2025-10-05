@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, Download, Search, Filter, Grid3x3, List, Calendar, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { Plus, Upload, Download, Search, ListFilter as Filter, Grid3x3, List, Calendar, Users, TriangleAlert as AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -188,48 +188,50 @@ export function ReviewsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between mb-6">
-          <TabsList>
-            <TabsTrigger value="my-tasks">
-              <Users className="w-4 h-4 mr-2" />
-              My Tasks
-              {!isAdmin && (
-                <Badge variant="secondary" className="ml-2">
-                  3
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="campaigns">
-              <Calendar className="w-4 h-4 mr-2" />
-              Campaigns
-              {isAdmin && (
-                <Badge variant="secondary" className="ml-2">
-                  3 Active
-                </Badge>
-              )}
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="templates">
-                <Grid3x3 className="w-4 h-4 mr-2" />
-                Templates
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <TabsList className="inline-flex w-auto">
+              <TabsTrigger value="my-tasks">
+                <Users className="w-4 h-4 mr-2" />
+                My Tasks
+                {!isAdmin && (
+                  <Badge variant="secondary" className="ml-2">
+                    3
+                  </Badge>
+                )}
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="campaigns">
+                <Calendar className="w-4 h-4 mr-2" />
+                Campaigns
+                {isAdmin && (
+                  <Badge variant="secondary" className="ml-2">
+                    3 Active
+                  </Badge>
+                )}
+              </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="templates">
+                  <Grid3x3 className="w-4 h-4 mr-2" />
+                  Templates
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-64"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 sm:flex-none sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full h-10"
+                />
+              </div>
+              <Button variant="outline" size="default" className="h-10">
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
             </div>
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
           </div>
         </div>
 

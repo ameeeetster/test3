@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, CheckSquare, Users, Shield, 
   FileCheck, AlertTriangle, BarChart3, Boxes, Settings,
   Menu, X, Sun, Moon, Search, Bell, ChevronDown, User, 
-  LogOut, Settings as SettingsIcon
+  LogOut, Settings as SettingsIcon, ScrollText, Repeat
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -40,6 +40,8 @@ const navItems: NavItem[] = [
   { name: 'Identities', path: '/identities', icon: Users, permission: 'view:identities' },
   { name: 'Access', path: '/access/roles', icon: Shield, permission: 'view:roles' },
   { name: 'Reviews', path: '/reviews', icon: FileCheck, permission: 'view:reviews' },
+  { name: 'Policies', path: '/policies', icon: ScrollText, permission: 'view:policies' },
+  { name: 'Lifecycle', path: '/lifecycle', icon: Repeat, permission: 'view:lifecycle' },
   { name: 'Risk', path: '/risk', icon: AlertTriangle, permission: 'view:risk' },
   { name: 'Reports', path: '/reports', icon: BarChart3, permission: 'view:reports' },
   { name: 'Integrations', path: '/integrations', icon: Boxes, permission: 'view:integrations' },

@@ -17,7 +17,7 @@ interface UserContextType {
   hasPermission: (permission: Permission) => boolean;
 }
 
-export type Permission = 
+export type Permission =
   | 'view:dashboard'
   | 'view:my-requests'
   | 'create:request'
@@ -30,6 +30,10 @@ export type Permission =
   | 'manage:roles'
   | 'view:reviews'
   | 'manage:reviews'
+  | 'view:policies'
+  | 'manage:policies'
+  | 'view:lifecycle'
+  | 'manage:lifecycle'
   | 'view:risk'
   | 'manage:risk'
   | 'view:reports'
@@ -67,6 +71,10 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     'manage:roles',
     'view:reviews',
     'manage:reviews',
+    'view:policies',
+    'manage:policies',
+    'view:lifecycle',
+    'manage:lifecycle',
     'view:risk',
     'manage:risk',
     'view:reports',
