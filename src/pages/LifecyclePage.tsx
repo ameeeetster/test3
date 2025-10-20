@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Progress } from '../components/ui/progress';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '../components/ui/drawer';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { SectionCard } from '../components/settings/SectionCard';
 import { CardMetadata } from '../components/settings/CardMetadata';
 import { DiffDrawer } from '../components/settings/DiffDrawer';
@@ -15,30 +20,89 @@ import { MappingTable, AttributeMapping } from '../components/lifecycle/MappingR
 import { SimulationDrawer } from '../components/lifecycle/SimulationDrawer';
 import { PriorityList, LifecycleRule } from '../components/lifecycle/PriorityList';
 import { RuleStatusBadge } from '../components/lifecycle/RuleStatusBadge';
-import { Plus, Play, Database, UserPlus, UserCog, UserMinus, TriangleAlert as AlertTriangle, Calendar, Settings } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { 
+  Plus, Play, Database, UserPlus, UserCog, UserMinus, TriangleAlert as AlertTriangle, 
+  Calendar, Settings, Workflow, Shield, Clock, AlertCircle, CheckCircle, 
+  BarChart3, Activity, Zap, GitBranch, Layers, Target, Filter, 
+  ChevronRight, ChevronDown, Eye, Edit, Copy, Trash2, MoreHorizontal,
+  TrendingUp, Users, Lock, Unlock, RefreshCw, Pause, PlayCircle
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Section {
   id: string;
   label: string;
   icon: any;
+  description: string;
+  badge?: string;
 }
 
 const sections: Section[] = [
-  { id: 'sources', label: 'Sources & Mappings', icon: Database },
-  { id: 'joiner', label: 'Joiner (Birthright)', icon: UserPlus },
-  { id: 'mover', label: 'Mover', icon: UserCog },
-  { id: 'leaver', label: 'Leaver', icon: UserMinus },
-  { id: 'orphans', label: 'Orphan Accounts', icon: AlertTriangle },
-  { id: 'calendars', label: 'Calendars & Blackouts', icon: Calendar }
+  { 
+    id: 'overview', 
+    label: 'Dashboard', 
+    icon: BarChart3, 
+    description: 'Overview and key metrics',
+    badge: 'Live'
+  },
+  { 
+    id: 'joiner', 
+    label: 'Joiner', 
+    icon: UserPlus, 
+    description: 'New hire onboarding',
+    badge: '12 rules'
+  },
+  { 
+    id: 'mover', 
+    label: 'Mover', 
+    icon: UserCog, 
+    description: 'Role and access changes',
+    badge: '8 rules'
+  },
+  { 
+    id: 'leaver', 
+    label: 'Leaver', 
+    icon: UserMinus, 
+    description: 'Offboarding workflows',
+    badge: '5 rules'
+  },
+  { 
+    id: 'settings', 
+    label: 'Settings', 
+    icon: Settings, 
+    description: 'Configuration and monitoring'
+  }
 ];
 
 export function LifecyclePage() {
-  const [activeSection, setActiveSection] = useState('sources');
+  const [activeSection, setActiveSection] = useState('overview');
   const [createRuleOpen, setCreateRuleOpen] = useState(false);
   const [simulationOpen, setSimulationOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Enhanced analytics and metrics
+  const analytics = useMemo(() => ({
+    totalWorkflows: 25,
+    activeRules: 18,
+    executionsToday: 47,
+    successRate: 94.2,
+    avgExecutionTime: '2.3s',
+    complianceScore: 98.5,
+    criticalAlerts: 2,
+    pendingApprovals: 7,
+    orphanAccounts: 12,
+    lastSync: '2 minutes ago',
+    nextScheduledRun: 'in 4 hours'
+  }), []);
+
+  const workflowMetrics = useMemo(() => ({
+    joiner: { executions: 23, success: 22, avgTime: '1.8s', errors: 1 },
+    mover: { executions: 15, success: 14, avgTime: '3.2s', errors: 1 },
+    leaver: { executions: 9, success: 9, avgTime: '4.1s', errors: 0 }
+  }), []);
 
   const [mappings, setMappings] = useState<AttributeMapping[]>([
     {
@@ -68,44 +132,120 @@ export function LifecyclePage() {
     {
       id: 'rule-1',
       name: 'Engineering New Hires',
-      description: 'Grant baseline access for engineering department',
+      description: 'Comprehensive onboarding for engineering department with security clearance',
       priority: 1,
       status: 'published',
-      conditions: 2,
-      actions: 4
+      conditions: 3,
+      actions: 8,
+      lastExecuted: '2 hours ago',
+      executionCount: 47,
+      successRate: 95.7,
+      avgExecutionTime: '1.8s',
+      requiresApproval: false,
+      riskLevel: 'low',
+      tags: ['engineering', 'security', 'high-priority']
     },
     {
       id: 'rule-2',
       name: 'Sales Team Onboarding',
-      description: 'Provision Salesforce and CRM access',
+      description: 'CRM access provisioning with territory assignment',
       priority: 2,
       status: 'published',
+      conditions: 2,
+      actions: 5,
+      lastExecuted: '1 hour ago',
+      executionCount: 23,
+      successRate: 91.3,
+      avgExecutionTime: '2.1s',
+      requiresApproval: true,
+      riskLevel: 'medium',
+      tags: ['sales', 'crm', 'territory']
+    },
+    {
+      id: 'rule-3',
+      name: 'Executive Onboarding',
+      description: 'Privileged access for C-level executives with enhanced security',
+      priority: 1,
+      status: 'test',
       conditions: 1,
-      actions: 3
+      actions: 12,
+      lastExecuted: 'never',
+      executionCount: 0,
+      successRate: 0,
+      avgExecutionTime: '0s',
+      requiresApproval: true,
+      riskLevel: 'high',
+      tags: ['executive', 'privileged', 'security']
     }
   ]);
 
   const [moverRules, setMoverRules] = useState<LifecycleRule[]>([
     {
-      id: 'rule-3',
-      name: 'Manager Promotion',
-      description: 'Grant manager permissions on title change',
+      id: 'rule-4',
+      name: 'Manager Promotion Workflow',
+      description: 'Automated role elevation with approval workflow and SoD checks',
       priority: 1,
       status: 'published',
-      conditions: 1,
-      actions: 2
+      conditions: 2,
+      actions: 6,
+      lastExecuted: '30 minutes ago',
+      executionCount: 12,
+      successRate: 100,
+      avgExecutionTime: '3.2s',
+      requiresApproval: true,
+      riskLevel: 'medium',
+      tags: ['promotion', 'manager', 'sod']
+    },
+    {
+      id: 'rule-5',
+      name: 'Department Transfer',
+      description: 'Cross-departmental access changes with cleanup',
+      priority: 2,
+      status: 'published',
+      conditions: 3,
+      actions: 4,
+      lastExecuted: '1 hour ago',
+      executionCount: 8,
+      successRate: 87.5,
+      avgExecutionTime: '2.8s',
+      requiresApproval: false,
+      riskLevel: 'low',
+      tags: ['transfer', 'department', 'cleanup']
     }
   ]);
 
   const [leaverRules, setLeaverRules] = useState<LifecycleRule[]>([
     {
-      id: 'rule-4',
+      id: 'rule-6',
       name: 'Standard Offboarding',
-      description: 'Immediate disable and phased deprovisioning',
+      description: 'Phased deprovisioning with compliance checks and data retention',
       priority: 1,
       status: 'published',
       conditions: 0,
-      actions: 5
+      actions: 9,
+      lastExecuted: '45 minutes ago',
+      executionCount: 15,
+      successRate: 93.3,
+      avgExecutionTime: '4.1s',
+      requiresApproval: false,
+      riskLevel: 'low',
+      tags: ['offboarding', 'compliance', 'phased']
+    },
+    {
+      id: 'rule-7',
+      name: 'Emergency Termination',
+      description: 'Immediate access revocation for security incidents',
+      priority: 1,
+      status: 'published',
+      conditions: 1,
+      actions: 7,
+      lastExecuted: 'never',
+      executionCount: 0,
+      successRate: 0,
+      avgExecutionTime: '0s',
+      requiresApproval: true,
+      riskLevel: 'high',
+      tags: ['emergency', 'security', 'immediate']
     }
   ]);
 
@@ -156,48 +296,81 @@ export function LifecyclePage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
+      {/* Simplified Header */}
       <div className="sticky top-16 z-10 bg-background border-b">
-        <div className="p-6 max-w-[1600px] mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-semibold">Lifecycle Automation</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Configure joiner, mover, and leaver workflows with automated provisioning
+        <div className="p-6 max-w-[1800px] mx-auto">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-semibold">Lifecycle Automation</h1>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Activity className="w-3 h-3 mr-1" />
+                  Live
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Identity lifecycle management with automated workflows
               </p>
             </div>
+            
+            {/* Essential Stats */}
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{analytics.successRate}%</div>
+                <div className="text-xs text-muted-foreground">Success Rate</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{analytics.executionsToday}</div>
+                <div className="text-xs text-muted-foreground">Today</div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setSimulationOpen(true)}>
                 <Play className="w-4 h-4 mr-1" />
-                Run Simulation
+                Test
               </Button>
               <Button size="sm" onClick={() => setCreateRuleOpen(true)}>
                 <Plus className="w-4 h-4 mr-1" />
-                Create Rule
+                New Rule
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 max-w-[1600px] mx-auto w-full flex-1">
+      <div className="p-6 max-w-[1800px] mx-auto w-full flex-1">
         <div className="flex gap-6">
-          <aside className="hidden lg:block w-64 flex-shrink-0">
+          {/* Enhanced Sidebar */}
+          <aside className="hidden lg:block w-72 flex-shrink-0">
             <nav className="sticky top-32 space-y-1">
               {sections.map(section => {
                 const Icon = section.icon;
+                const isActive = activeSection === section.id;
                 return (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      activeSection === section.id
-                        ? 'bg-accent text-foreground font-medium'
-                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {section.label}
+                    <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{section.label}</span>
+                        {section.badge && (
+                          <Badge variant={isActive ? "secondary" : "outline"} className="text-xs">
+                            {section.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs mt-1 opacity-75">{section.description}</p>
+                    </div>
                   </button>
                 );
               })}
@@ -205,8 +378,9 @@ export function LifecyclePage() {
           </aside>
 
           <div className="flex-1 min-w-0">
+            {/* Mobile Navigation */}
             <div className="lg:hidden border-b mb-6 -mx-4 px-4">
-              <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+              <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
                 {sections.map(section => {
                   const Icon = section.icon;
                   return (
@@ -215,8 +389,8 @@ export function LifecyclePage() {
                       onClick={() => setActiveSection(section.id)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
                         activeSection === section.id
-                          ? 'bg-accent text-foreground font-medium'
-                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -228,226 +402,469 @@ export function LifecyclePage() {
             </div>
 
             <div className="space-y-6">
-              {activeSection === 'sources' && (
-                <>
-                  <SectionCard
-                    title="HR Source Precedence"
-                    description="Define priority order for resolving conflicting data"
-                  >
-                    <div className="space-y-2">
-                      {['Workday', 'Azure AD', 'Google Workspace'].map((source, index) => (
-                        <div key={source} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <div className="w-8 h-8 rounded flex items-center justify-center bg-accent font-medium text-sm">
-                            {index + 1}
-                          </div>
-                          <span className="font-medium">{source}</span>
-                          <Badge variant="secondary" className="ml-auto">Priority {index + 1}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                    <CardMetadata user="System Admin" timestamp="1 week ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                  </SectionCard>
+              {/* Simplified Overview Section */}
+              {activeSection === 'overview' && (
+                <div className="space-y-6">
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Total Rules</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analytics.activeRules}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {joinerRules.length} Joiner • {moverRules.length} Mover • {leaverRules.length} Leaver
+                        </p>
+                      </CardContent>
+                    </Card>
 
-                  <SectionCard
-                    title="Attribute Mappings"
-                    description="Map source fields to user profile attributes with transformations"
-                  >
-                    <MappingTable mappings={mappings} onChange={setMappings} />
-                    {mappings.some(m => m.conflict) && (
-                      <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                        <div className="text-xs text-destructive">
-                          <p className="font-medium mb-1">Mapping Conflicts Detected</p>
-                          <p>Duplicate employeeId found in multiple sources. Review precedence rules.</p>
-                        </div>
-                      </div>
-                    )}
-                    <CardMetadata user="Sarah Johnson" timestamp="2 days ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                  </SectionCard>
-                </>
-              )}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{analytics.successRate}%</div>
+                        <Progress value={analytics.successRate} className="mt-2" />
+                      </CardContent>
+                    </Card>
 
-              {activeSection === 'joiner' && (
-                <SectionCard
-                  title="Joiner Rules (Birthright Access)"
-                  description="Automatically grant access to new hires based on their attributes"
-                  actions={
-                    <Button size="sm" onClick={() => setCreateRuleOpen(true)}>
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Rule
-                    </Button>
-                  }
-                >
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Rules are evaluated top-down. First matching rule wins.
-                    </p>
-                    <PriorityList
-                      rules={joinerRules}
-                      onReorder={(from, to) => handleReorder(joinerRules, from, to)}
-                      onView={id => toast.info('View rule: ' + id)}
-                    />
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Executions Today</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analytics.executionsToday}</div>
+                        <p className="text-xs text-muted-foreground">
+                          Avg time: {analytics.avgExecutionTime}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <CardMetadata user="Michael Chen" timestamp="5 hours ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                </SectionCard>
-              )}
 
-              {activeSection === 'mover' && (
-                <SectionCard
-                  title="Mover Rules"
-                  description="Respond to attribute changes like promotions or department transfers"
-                  actions={
-                    <Button size="sm" onClick={() => setCreateRuleOpen(true)}>
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Rule
-                    </Button>
-                  }
-                >
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {['Manager Change', 'Department Change', 'Location Change', 'Title Change'].map(trigger => (
-                        <div key={trigger} className="p-3 rounded-lg border bg-card">
-                          <div className="text-xs text-muted-foreground mb-1">Trigger</div>
-                          <div className="text-sm font-medium">{trigger}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <PriorityList
-                      rules={moverRules}
-                      onReorder={(from, to) => handleReorder(moverRules, from, to)}
-                      onView={id => toast.info('View rule: ' + id)}
-                    />
-                  </div>
-                  <CardMetadata user="Emily Davis" timestamp="1 day ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                </SectionCard>
-              )}
-
-              {activeSection === 'leaver' && (
-                <SectionCard
-                  title="Leaver Rules"
-                  description="Automated offboarding with phased deprovisioning"
-                  actions={
-                    <Button size="sm" onClick={() => setCreateRuleOpen(true)}>
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Rule
-                    </Button>
-                  }
-                >
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4" />
-                        Offboarding Phases
-                      </h4>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex items-start gap-2">
-                          <Badge variant="secondary" className="text-xs">Immediate</Badge>
-                          <span className="text-muted-foreground">Disable sign-in, revoke tokens</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Badge variant="secondary" className="text-xs">By EOD</Badge>
-                          <span className="text-muted-foreground">Remove privileged access</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Badge variant="secondary" className="text-xs">+7 days</Badge>
-                          <span className="text-muted-foreground">Deprovision apps, forward email</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Badge variant="secondary" className="text-xs">+30 days</Badge>
-                          <span className="text-muted-foreground">Archive mailbox</span>
-                        </div>
+                  {/* Quick Actions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Quick Actions</CardTitle>
+                      <CardDescription>Common lifecycle management tasks</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => setActiveSection('joiner')}>
+                          <UserPlus className="w-6 h-6" />
+                          <span>Manage Joiner Rules</span>
+                        </Button>
+                        <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => setActiveSection('mover')}>
+                          <UserCog className="w-6 h-6" />
+                          <span>Manage Mover Rules</span>
+                        </Button>
+                        <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => setActiveSection('leaver')}>
+                          <UserMinus className="w-6 h-6" />
+                          <span>Manage Leaver Rules</span>
+                        </Button>
                       </div>
-                    </div>
-                    <PriorityList
-                      rules={leaverRules}
-                      onReorder={(from, to) => handleReorder(leaverRules, from, to)}
-                      onView={id => toast.info('View rule: ' + id)}
-                    />
-                  </div>
-                  <CardMetadata user="Security Team" timestamp="1 week ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                </SectionCard>
-              )}
+                    </CardContent>
+                  </Card>
 
-              {activeSection === 'orphans' && (
-                <SectionCard
-                  title="Orphan & Unlinked Accounts"
-                  description="Detect and remediate accounts without a linked identity"
-                >
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Detection Rules</Label>
-                      <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div>
-                          <div className="text-sm font-medium">No identity match</div>
-                          <div className="text-xs text-muted-foreground">Account exists but no user record found</div>
-                        </div>
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg border">
-                        <div>
-                          <div className="text-sm font-medium">Dormant accounts</div>
-                          <div className="text-xs text-muted-foreground">No activity for 90+ days</div>
-                        </div>
-                        <Switch defaultChecked />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Remediation Actions</Label>
-                      <Select defaultValue="quarantine">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="quarantine">Quarantine (disable)</SelectItem>
-                          <SelectItem value="notify">Notify owners</SelectItem>
-                          <SelectItem value="delete">Schedule deletion</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <CardMetadata user="System Admin" timestamp="3 days ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                </SectionCard>
-              )}
-
-              {activeSection === 'calendars' && (
-                <SectionCard
-                  title="Calendars & Blackout Dates"
-                  description="Configure organizational calendars and provisioning schedules"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 rounded-lg border">
-                      <div>
-                        <div className="text-sm font-medium">Skip deprovision on holidays</div>
-                        <div className="text-xs text-muted-foreground">Delay offboarding actions during org blackout dates</div>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-lg border">
-                      <div>
-                        <div className="text-sm font-medium">Skip deprovision on weekends</div>
-                        <div className="text-xs text-muted-foreground">Schedule deprovisioning for next business day</div>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Regional Calendars</Label>
-                      <div className="space-y-2">
-                        {['US Holidays', 'EMEA Holidays', 'APAC Holidays'].map(cal => (
-                          <div key={cal} className="flex items-center gap-2 p-2 rounded border bg-card">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm">{cal}</span>
-                            <Badge variant="secondary" className="ml-auto text-xs">23 dates</Badge>
+                  {/* Recent Activity */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Activity</CardTitle>
+                      <CardDescription>Latest workflow executions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {[
+                          { type: 'joiner', user: 'Sarah Chen', action: 'Engineering onboarding', time: '2 min ago', status: 'success' },
+                          { type: 'mover', user: 'Mike Johnson', action: 'Manager promotion', time: '15 min ago', status: 'success' },
+                          { type: 'leaver', user: 'Alex Rivera', action: 'Standard offboarding', time: '45 min ago', status: 'success' },
+                          { type: 'joiner', user: 'Emma Wilson', action: 'Sales onboarding', time: '1 hour ago', status: 'pending' }
+                        ].map((activity, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                            <div className={`w-2 h-2 rounded-full ${
+                              activity.status === 'success' ? 'bg-green-500' : 
+                              activity.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
+                            }`} />
+                            <div className="flex-1">
+                              <div className="font-medium">{activity.user}</div>
+                              <div className="text-sm text-muted-foreground">{activity.action}</div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">{activity.time}</div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  </div>
-                  <CardMetadata user="Global Ops" timestamp="2 weeks ago" onViewAudit={() => setHistoryDrawerOpen(true)} />
-                </SectionCard>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
+
+              {/* Settings Section - Consolidated Configuration */}
+              {activeSection === 'settings' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Data Sources & Mapping</CardTitle>
+                      <CardDescription>Configure HR systems and attribute mappings</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">HR Source Precedence</h4>
+                          <div className="space-y-2">
+                            {['Workday', 'Azure AD', 'Google Workspace'].map((source, index) => (
+                              <div key={source} className="flex items-center gap-3 p-2 rounded border bg-card">
+                                <div className="w-6 h-6 rounded flex items-center justify-center bg-accent font-medium text-xs">
+                                  {index + 1}
+                                </div>
+                                <span className="text-sm">{source}</span>
+                                <Badge variant="secondary" className="ml-auto text-xs">Priority {index + 1}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Attribute Mappings</h4>
+                          <MappingTable mappings={mappings} onChange={setMappings} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monitoring & Alerts</CardTitle>
+                      <CardDescription>System health and alerting configuration</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">System Health</span>
+                            <Badge variant="secondary">98.5%</Badge>
+                          </div>
+                          <Progress value={98.5} className="h-2" />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Active Alerts</span>
+                            <Badge variant="destructive">2</Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">Require attention</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Compliance & Risk</CardTitle>
+                      <CardDescription>SoD controls and risk management</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-purple-600">98.5%</div>
+                          <div className="text-xs text-muted-foreground">Compliance Score</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-red-600">3</div>
+                          <div className="text-xs text-muted-foreground">SoD Violations</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-yellow-600">7</div>
+                          <div className="text-xs text-muted-foreground">Active Exceptions</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Enhanced Joiner Automation Section */}
+              {activeSection === 'joiner' && (
+                <div className="space-y-6">
+                  {/* Joiner Overview */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-blue-600" />
+                        Joiner Automation Dashboard
+                      </CardTitle>
+                      <CardDescription>Birthright access provisioning and onboarding workflows</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
+                          <div className="text-2xl font-bold text-blue-600">{joinerRules.length}</div>
+                          <div className="text-sm text-blue-800">Active Rules</div>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
+                          <div className="text-2xl font-bold text-green-600">23</div>
+                          <div className="text-sm text-green-800">Executions Today</div>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-purple-50 border border-purple-200">
+                          <div className="text-2xl font-bold text-purple-600">95.7%</div>
+                          <div className="text-sm text-purple-800">Success Rate</div>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-orange-50 border border-orange-200">
+                          <div className="text-2xl font-bold text-orange-600">1.8s</div>
+                          <div className="text-sm text-orange-800">Avg Time</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            <Filter className="w-4 h-4 mr-1" />
+                            Filter
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Target className="w-4 h-4 mr-1" />
+                            Templates
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setSimulationOpen(true)}>
+                            <Play className="w-4 h-4 mr-1" />
+                            Test Rules
+                          </Button>
+                          <Button size="sm" onClick={() => setCreateRuleOpen(true)}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Create Rule
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Simplified Rules List */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Onboarding Rules</CardTitle>
+                      <CardDescription>Rules are evaluated top-down. First matching rule wins.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {joinerRules.map((rule, index) => (
+                          <div key={rule.id} className="p-4 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded flex items-center justify-center bg-accent font-medium text-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{rule.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{rule.description}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={rule.status === 'published' ? 'default' : 'secondary'}>
+                                  {rule.status}
+                                </Badge>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{rule.conditions} conditions</span>
+                                <span>{rule.actions} actions</span>
+                                <span>{rule.executionCount} runs</span>
+                                <span className="text-green-600">{rule.successRate}% success</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Simplified Mover Automation Section */}
+              {activeSection === 'mover' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserCog className="w-5 h-5 text-orange-600" />
+                        Mover Automation
+                      </CardTitle>
+                      <CardDescription>Role changes, promotions, and access modifications</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-orange-600">{moverRules.length}</div>
+                          <div className="text-xs text-muted-foreground">Active Rules</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-green-600">15</div>
+                          <div className="text-xs text-muted-foreground">Executions Today</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-purple-600">93.3%</div>
+                          <div className="text-xs text-muted-foreground">Success Rate</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Mover Rules</CardTitle>
+                      <CardDescription>Automated workflows for role and access changes</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {moverRules.map((rule, index) => (
+                          <div key={rule.id} className="p-4 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded flex items-center justify-center bg-accent font-medium text-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{rule.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{rule.description}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={rule.status === 'published' ? 'default' : 'secondary'}>
+                                  {rule.status}
+                                </Badge>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{rule.conditions} conditions</span>
+                                <span>{rule.actions} actions</span>
+                                <span>{rule.executionCount} runs</span>
+                                <span className="text-green-600">{rule.successRate}% success</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Simplified Leaver Automation Section */}
+              {activeSection === 'leaver' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserMinus className="w-5 h-5 text-red-600" />
+                        Leaver Automation
+                      </CardTitle>
+                      <CardDescription>Automated offboarding with phased deprovisioning</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-red-600">{leaverRules.length}</div>
+                          <div className="text-xs text-muted-foreground">Active Rules</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-green-600">9</div>
+                          <div className="text-xs text-muted-foreground">Executions Today</div>
+                        </div>
+                        <div className="text-center p-3 rounded border bg-card">
+                          <div className="text-lg font-bold text-purple-600">100%</div>
+                          <div className="text-xs text-muted-foreground">Success Rate</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Leaver Rules</CardTitle>
+                      <CardDescription>Automated workflows for offboarding and access revocation</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {leaverRules.map((rule, index) => (
+                          <div key={rule.id} className="p-4 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded flex items-center justify-center bg-accent font-medium text-sm">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{rule.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{rule.description}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={rule.status === 'published' ? 'default' : 'secondary'}>
+                                  {rule.status}
+                                </Badge>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span>{rule.conditions} conditions</span>
+                                <span>{rule.actions} actions</span>
+                                <span>{rule.executionCount} runs</span>
+                                <span className="text-green-600">{rule.successRate}% success</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
             </div>
           </div>
         </div>

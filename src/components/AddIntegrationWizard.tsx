@@ -10,6 +10,7 @@ import { SchedulePicker } from './SchedulePicker';
 import { PreflightCheck } from './PreflightCheck';
 import { WizardSummary } from './WizardSummary';
 import { WizardFooter } from './WizardFooter';
+import { ISRConfiguration } from './isr/ISRConfiguration';
 import { getConnectorById, defaultMappings } from '../data/connectors';
 import { suggestInstanceName } from '../data/integration-instances';
 import { toast } from 'sonner';
@@ -76,22 +77,30 @@ export function AddIntegrationWizard({ onClose, preselectedConnectorId }: AddInt
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Insert instance basics as step 0, shift connector steps to 1+
+  // Insert instance basics as step 0, ISR config as step 1, shift connector steps to 2+
   const allSteps = connector
     ? [
         { id: 'instance-basics', title: 'Instance Basics' },
+        { id: 'isr-configuration', title: 'ISR Configuration' },
         ...connector.steps.map((s) => ({ id: s.id, title: s.title })),
       ]
     : [];
 
-  const currentStep = connector?.steps[currentStepIndex - 1]; // -1 because step 0 is instance basics
+  const currentStep = connector?.steps[currentStepIndex - 2]; // -2 because step 0 is instance basics, step 1 is ISR config
   const isInstanceBasicsStep = currentStepIndex === 0;
+  const isISRConfigurationStep = currentStepIndex === 1;
 
   // Validate current step
   const canProceed = useMemo(() => {
     // Step 0: Instance Basics validation
     if (isInstanceBasicsStep) {
       return !!(config.instanceName && config.environment && config.owner);
+    }
+
+    // Step 1: ISR Configuration validation
+    if (isISRConfigurationStep) {
+      // ISR configuration is optional, so always allow proceeding
+      return true;
     }
 
     if (!currentStep || !currentStep.fields) return true;
@@ -234,8 +243,39 @@ export function AddIntegrationWizard({ onClose, preselectedConnectorId }: AddInt
             </>
           )}
 
-          {/* Steps 1+: Connector-specific steps */}
-          {!isInstanceBasicsStep && currentStep && (
+          {/* Step 1: ISR Configuration */}
+          {isISRConfigurationStep && (
+            <>
+              <div className="mb-6">
+                <h2
+                  style={{
+                    fontSize: 'var(--text-lg)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)',
+                    marginBottom: '4px',
+                  }}
+                >
+                  ISR Configuration
+                </h2>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                  Optionally designate this integration as an Identity System of Record (ISR)
+                </p>
+              </div>
+              <ISRConfiguration
+                applicationId={config.instanceName || ''}
+                onSave={(isrConfig) => {
+                  updateConfig('isrConfig', isrConfig);
+                }}
+                onCancel={() => {
+                  // Allow user to skip ISR configuration
+                  setCurrentStepIndex(2);
+                }}
+              />
+            </>
+          )}
+
+          {/* Steps 2+: Connector-specific steps */}
+          {!isInstanceBasicsStep && !isISRConfigurationStep && currentStep && (
             <>
               <div className="mb-6">
                 <h2

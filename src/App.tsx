@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
+import AuthPage from './pages/AuthPage';
+import { ProtectedLayout } from './components/ProtectedLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { HomePage } from './pages/HomePage';
 import { RequestsPage } from './pages/RequestsPage';
@@ -10,6 +12,7 @@ import { IntegrationsPage } from './pages/IntegrationsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { Toaster } from './components/ui/sonner';
 import { UserProvider } from './contexts/UserContext';
+import { AuthProvider } from './contexts/AuthProvider';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { AccessPage } from './pages/AccessPage';
 import { RoleDetailPage } from './pages/RoleDetailPage';
@@ -23,15 +26,23 @@ import { CreateReviewWizard } from './components/reviews/CreateReviewWizard';
 import { ReportsPage } from './pages/ReportsPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { LifecyclePage } from './pages/LifecyclePage';
+import { JmlPage } from './pages/JmlPage';
+import { ISRDemoPage } from './pages/ISRDemoPage';
+import { SupabaseConnectionTest } from './components/SupabaseConnectionTest';
 
 export default function App() {
   return (
     <ErrorBoundary>
       <UserProvider>
+        <AuthProvider>
         <BrowserRouter>
-          <AppShell>
-            <ErrorBoundary>
-              <Routes>
+          <ErrorBoundary>
+            <Routes>
+              {/* Public */}
+              <Route path="/auth" element={<AuthPage />} />
+
+              {/* Protected */}
+              <Route element={<ProtectedLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/requests" element={<RequestsPage />} />
                 <Route path="/requests/new" element={<RequestsPage />} />
@@ -55,17 +66,23 @@ export default function App() {
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/policies" element={<PoliciesPage />} />
                 <Route path="/lifecycle" element={<LifecyclePage />} />
+                <Route path="/jml" element={<JmlPage />} />
+                <Route path="/isr-demo" element={<ISRDemoPage />} />
                 <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/integrations/new" element={<AddIntegrationWizard onClose={() => window.location.href = '/integrations'} />} />
                 <Route path="/integrations/:id" element={<IntegrationDetailPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                {/* Catch-all route for unmatched paths */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </AppShell>
+                {/* Supabase connection test - remove after verifying connection */}
+                <Route path="/test-connection" element={<SupabaseConnectionTest />} />
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/auth" replace />} />
+            </Routes>
+          </ErrorBoundary>
           <Toaster />
         </BrowserRouter>
+        </AuthProvider>
       </UserProvider>
     </ErrorBoundary>
   );

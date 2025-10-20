@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, CheckSquare, Users, Shield, 
   FileCheck, AlertTriangle, BarChart3, Boxes, Settings,
   Menu, X, Sun, Moon, Search, Bell, ChevronDown, User, 
-  LogOut, Settings as SettingsIcon, ScrollText, Repeat
+  LogOut, Settings as SettingsIcon, ScrollText, Repeat, Activity, Database
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { useUser, Permission } from '../contexts/UserContext';
+import { supabase } from '../lib/supabase';
 import { RoleSwitcher } from './RoleSwitcher';
 import { toast } from 'sonner';
 
@@ -40,6 +41,8 @@ const navItems: NavItem[] = [
   { name: 'Identities', path: '/identities', icon: Users, permission: 'view:identities' },
   { name: 'Access', path: '/access/roles', icon: Shield, permission: 'view:roles' },
   { name: 'Reviews', path: '/reviews', icon: FileCheck, permission: 'view:reviews' },
+  { name: 'JML', path: '/jml', icon: Activity, permission: 'view:jml' },
+  { name: 'ISR Demo', path: '/isr-demo', icon: Database, permission: 'view:jml' },
   { name: 'Policies', path: '/policies', icon: ScrollText, permission: 'view:policies' },
   { name: 'Lifecycle', path: '/lifecycle', icon: Repeat, permission: 'view:lifecycle' },
   { name: 'Risk', path: '/risk', icon: AlertTriangle, permission: 'view:risk' },
@@ -261,10 +264,9 @@ export function AppShell({ children }: AppShellProps) {
               }} />
 
               <DropdownMenuItem
-                onClick={() => {
-                  toast.success("Signed out successfully!", {
-                    description: "You have been logged out of the system."
-                  });
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = '/auth';
                 }}
                 style={{
                   padding: '10px 12px',

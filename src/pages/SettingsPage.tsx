@@ -1,10 +1,14 @@
-import React from 'react';
+﻿import React from 'react';
 import { 
   Building2, Shield, FileText, Workflow, Sparkles, Bell, Lock, Code,
   Users, Settings2, Database, BarChart3, AlertTriangle, CheckSquare,
-  Globe, Key, ShieldCheck, Zap, Monitor, Mail, Clock, Save, RotateCcw
+  Globe, Key, ShieldCheck, Zap, Monitor, Mail, Clock, Save, RotateCcw,
+  Download, Upload, RefreshCw, Eye, EyeOff, Trash2, Plus, Edit3,
+  Server, HardDrive, Cpu, MemoryStick, Wifi, AlertCircle,
+  CheckCircle2, XCircle, Info, ExternalLink, Copy, Search, Filter,
+  Calendar, Timer, UserCheck, UserX, Activity, TrendingUp, TrendingDown
 } from 'lucide-react';
-import { Card } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
@@ -13,7 +17,10 @@ import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Slider } from '../components/ui/slider';
 import { Textarea } from '../components/ui/textarea';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
@@ -28,7 +35,13 @@ export function SettingsPage() {
       soxCompliance: true,
       gdprCompliance: true,
       iso27001: false,
-      hipaaCompliance: false
+      hipaaCompliance: false,
+      pciCompliance: false,
+      nistCompliance: true,
+      customCompliance: "",
+      dataRetentionPolicy: "7years",
+      privacyPolicyUrl: "https://acme.com/privacy",
+      termsOfServiceUrl: "https://acme.com/terms"
     },
     // Identity & Access Management
     identity: {
@@ -37,7 +50,16 @@ export function SettingsPage() {
       passwordlessAuth: false,
       minPasswordLength: 12,
       sessionTimeout: 8,
-      highRiskApproval: true
+      highRiskApproval: true,
+      passwordComplexity: "high",
+      accountLockoutThreshold: 5,
+      lockoutDuration: 30,
+      passwordHistory: 12,
+      passwordExpiry: 90,
+      biometricAuth: false,
+      hardwareTokenAuth: true,
+      adaptiveAuth: true,
+      riskBasedAuth: true
     },
     // Security & Compliance
     security: {
@@ -46,7 +68,15 @@ export function SettingsPage() {
       sodRiskThreshold: 75,
       continuousRiskMonitoring: true,
       privilegedAccessMonitoring: true,
-      riskReviewInterval: "30"
+      riskReviewInterval: "30",
+      encryptionAtRest: true,
+      encryptionInTransit: true,
+      dataMasking: true,
+      auditTrailRetention: 2555,
+      incidentResponsePlan: true,
+      securityTrainingRequired: true,
+      penetrationTesting: "quarterly",
+      vulnerabilityScanning: "weekly"
     },
     // Workflows & Automation
     workflows: {
@@ -57,7 +87,12 @@ export function SettingsPage() {
       defaultApprovalLevels: "2",
       escalationRules: true,
       escalationTime: 24,
-      parallelApprovals: false
+      parallelApprovals: false,
+      autoApprovalThreshold: 25,
+      emergencyAccessWorkflow: true,
+      bulkOperationsEnabled: true,
+      workflowTemplates: true,
+      customWorkflows: false
     },
     // Integrations & Connectors
     integrations: {
@@ -68,7 +103,13 @@ export function SettingsPage() {
       primaryHrSystem: "workday",
       cmdbSource: "servicenow",
       conflictResolution: true,
-      correlationKey: "email"
+      correlationKey: "email",
+      apiRateLimit: 1000,
+      connectionTimeout: 30,
+      retryAttempts: 3,
+      dataValidation: true,
+      schemaValidation: true,
+      customConnectors: false
     },
     // AI & Analytics
     ai: {
@@ -76,25 +117,81 @@ export function SettingsPage() {
       peerGroupAnalysis: true,
       autoSuggestReviewers: true,
       riskScoreThreshold: 75,
-      behavioralAnalytics: true
+      behavioralAnalytics: true,
+      anomalyDetection: true,
+      predictiveAnalytics: false,
+      naturalLanguageProcessing: true,
+      machineLearningModels: "standard",
+      dataPrivacyCompliance: true,
+      aiAuditLogging: true
     },
     // Notifications & Alerts
     notifications: {
       emailNotifications: true,
       slackIntegration: false,
       weeklyDigest: true,
-      criticalAlerts: true
+      criticalAlerts: true,
+      teamsIntegration: false,
+      webhookNotifications: false,
+      smsNotifications: false,
+      pushNotifications: true,
+      digestFrequency: "weekly",
+      alertSeverityLevels: ["low", "medium", "high", "critical"],
+      customNotificationTemplates: false
     },
     // System Administration
     system: {
       auditLogRetention: 7,
       backupFrequency: "daily",
       maintenanceMode: false,
-      performanceMonitoring: true
+      performanceMonitoring: true,
+      systemHealthChecks: true,
+      autoScaling: false,
+      loadBalancing: true,
+      disasterRecovery: true,
+      highAvailability: true,
+      systemMaintenanceWindow: "sunday-2am",
+      logLevel: "info",
+      debugMode: false,
+      apiVersioning: true,
+      rateLimiting: true
+    },
+    // Advanced Features
+    advanced: {
+      customFields: true,
+      workflowEngine: true,
+      reportingEngine: true,
+      apiAccess: true,
+      sdkAccess: false,
+      webhookSupport: true,
+      bulkImportExport: true,
+      dataArchiving: true,
+      performanceOptimization: true,
+      customBranding: false,
+      whiteLabeling: false,
+      multiTenancy: false
     }
   });
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState("governance");
+  const [systemHealth, setSystemHealth] = React.useState({
+    cpuUsage: 45,
+    memoryUsage: 62,
+    diskUsage: 38,
+    networkLatency: 12,
+    activeConnections: 1247,
+    uptime: "99.9%",
+    lastBackup: "2024-01-15 02:00:00",
+    nextMaintenance: "2024-01-21 02:00:00"
+  });
+  const [recentActivity, setRecentActivity] = React.useState([
+    { id: 1, action: "Settings updated", user: "admin@acme.com", timestamp: "2 minutes ago", type: "info" },
+    { id: 2, action: "New integration added", user: "system", timestamp: "1 hour ago", type: "success" },
+    { id: 3, action: "Security policy modified", user: "security@acme.com", timestamp: "3 hours ago", type: "warning" },
+    { id: 4, action: "Backup completed", user: "system", timestamp: "6 hours ago", type: "info" },
+    { id: 5, action: "User permissions updated", user: "hr@acme.com", timestamp: "1 day ago", type: "info" }
+  ]);
 
   // Generic update function for settings
   const updateSetting = (path: string, value: any) => {
@@ -118,6 +215,52 @@ export function SettingsPage() {
     localStorage.setItem('iga-settings', JSON.stringify(settings));
     toast.success("Settings saved successfully");
     setHasUnsavedChanges(false);
+    
+    // Add to recent activity
+    const newActivity = {
+      id: Date.now(),
+      action: "Settings updated",
+      user: "admin@acme.com",
+      timestamp: "Just now",
+      type: "info" as const
+    };
+    setRecentActivity(prev => [newActivity, ...prev.slice(0, 4)]);
+  };
+
+  const handleExportSettings = () => {
+    const dataStr = JSON.stringify(settings, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `iga-settings-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Settings exported successfully");
+  };
+
+  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedSettings = JSON.parse(e.target?.result as string);
+          setSettings(importedSettings);
+          setHasUnsavedChanges(true);
+          toast.success("Settings imported successfully");
+        } catch (error) {
+          toast.error("Invalid settings file");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const getHealthStatus = (value: number) => {
+    if (value >= 90) return { status: "critical", color: "text-red-600", bgColor: "bg-red-100" };
+    if (value >= 75) return { status: "warning", color: "text-yellow-600", bgColor: "bg-yellow-100" };
+    return { status: "healthy", color: "text-green-600", bgColor: "bg-green-100" };
   };
 
   const handleReset = () => {
@@ -209,9 +352,9 @@ export function SettingsPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
-      {/* Enhanced Header */}
+      {/* Enhanced Header with System Health */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 
               className="tracking-tight"
@@ -241,6 +384,27 @@ export function SettingsPage() {
               </Badge>
             )}
             <div className="flex gap-2">
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportSettings}
+                className="hidden"
+                id="import-settings"
+              />
+              <label htmlFor="import-settings">
+                <Button variant="outline" className="gap-2 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  Import
+                </Button>
+              </label>
+              <Button 
+                variant="outline" 
+                onClick={handleExportSettings}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={handleReset}
@@ -260,6 +424,79 @@ export function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* System Health Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">System Uptime</p>
+                <p className="text-2xl font-bold text-green-600">{systemHealth.uptime}</p>
+              </div>
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">CPU Usage</p>
+                <p className="text-2xl font-bold">{systemHealth.cpuUsage}%</p>
+              </div>
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Cpu className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+            <Progress value={systemHealth.cpuUsage} className="mt-2" />
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Memory Usage</p>
+                <p className="text-2xl font-bold">{systemHealth.memoryUsage}%</p>
+              </div>
+              <div className="p-2 bg-purple-100 rounded-full">
+                <MemoryStick className="w-5 h-5 text-purple-600" />
+              </div>
+            </div>
+            <Progress value={systemHealth.memoryUsage} className="mt-2" />
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Connections</p>
+                <p className="text-2xl font-bold">{systemHealth.activeConnections.toLocaleString()}</p>
+              </div>
+              <div className="p-2 bg-orange-100 rounded-full">
+                <Wifi className="w-5 h-5 text-orange-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button variant="outline" size="sm" className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Refresh Health
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Server className="w-4 h-4" />
+            System Logs
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <HardDrive className="w-4 h-4" />
+            Backup Status
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Activity className="w-4 h-4" />
+            Performance Metrics
+          </Button>
+        </div>
       </div>
 
       <Card 
@@ -271,7 +508,7 @@ export function SettingsPage() {
           boxShadow: 'var(--shadow-sm)'
         }}
       >
-        <Tabs defaultValue="governance" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="border-b" style={{ borderColor: 'var(--border)' }}>
             <TabsList className="w-full justify-start rounded-none h-auto p-0 overflow-x-auto" style={{ backgroundColor: 'transparent' }}>
               <TabsTrigger 
@@ -337,6 +574,22 @@ export function SettingsPage() {
               >
                 <Settings2 className="w-4 h-4 mr-2" />
                 System Administration
+              </TabsTrigger>
+              <TabsTrigger 
+                value="advanced"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:font-semibold whitespace-nowrap transition-all duration-200"
+                style={{ padding: '16px 20px' }}
+              >
+                <Code className="w-4 h-4 mr-2" />
+                Advanced Features
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monitoring"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:font-semibold whitespace-nowrap transition-all duration-200"
+                style={{ padding: '16px 20px' }}
+              >
+                <Monitor className="w-4 h-4 mr-2" />
+                Monitoring & Logs
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1473,636 +1726,368 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
-=======
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Textarea } from '../components/ui/textarea';
-import { SectionCard } from '../components/settings/SectionCard';
-import { FieldGroup, FieldGroup2Col } from '../components/settings/FieldGroup';
-import { SecretField } from '../components/settings/SecretField';
-import { DirtyStateBanner } from '../components/settings/DirtyStateBanner';
-import { StickyFooter } from '../components/settings/StickyFooter';
-import { DomainChipList } from '../components/settings/DomainChipList';
-import { EmailField } from '../components/settings/EmailField';
-import { CardMetadata } from '../components/settings/CardMetadata';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '../components/ui/drawer';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Checkbox } from '../components/ui/checkbox';
-import { AuthenticationTab } from './settings/AuthenticationTab';
-import { toast } from 'sonner@2.0.3';
-import { Building2, Shield, FileText, Workflow, Sparkles, Bell, Palette, Code, Database, Users, FileSearch, TriangleAlert as AlertTriangle, Search, Copy, Check, Plus, Trash2, CreditCard as Edit, Play, RotateCcw, Mail, MessageSquare, Webhook, Globe, Download, ChevronRight } from 'lucide-react';
-
-interface Section {
-  id: string;
-  label: string;
-  icon: any;
-  badge?: { text: string; variant: 'default' | 'destructive' | 'secondary' };
-}
-
-const sections: Section[] = [
-  { id: 'organization', label: 'Organization', icon: Building2 },
-  { id: 'authentication', label: 'Authentication', icon: Shield },
-  { id: 'policies', label: 'Policies', icon: FileText },
-  { id: 'lifecycle', label: 'Lifecycle', icon: Workflow },
-  { id: 'ai', label: 'AI', icon: Sparkles, badge: { text: 'Beta', variant: 'secondary' } },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'branding', label: 'Branding', icon: Palette },
-  { id: 'api', label: 'API & Webhooks', icon: Code },
-  { id: 'data', label: 'Data & Compliance', icon: Database },
-  { id: 'rbac', label: 'Admin RBAC', icon: Users },
-  { id: 'audit', label: 'Audit Log', icon: FileSearch },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, badge: { text: 'Danger', variant: 'destructive' } }
-];
-
-export function SettingsPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [activeSection, setActiveSection] = useState('organization');
-  const [isDirty, setIsDirty] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [ssoDrawerOpen, setSsoDrawerOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [auditDrawerOpen, setAuditDrawerOpen] = useState(false);
-  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
-
-  const [orgData, setOrgData] = useState({
-    name: 'Acme Corporation',
-    domains: [
-      { domain: 'acme.com', status: 'verified' as const },
-      { domain: 'acme.io', status: 'pending' as const }
-    ],
-    timezone: 'America/Los_Angeles',
-    locale: 'en-US',
-    fiscalYearStart: 'January',
-    securityEmail: 'security@acme.com',
-    supportEmail: 'support@acme.com',
-    tenantId: 'acme-prod-us-west-2',
-    region: 'US West (Oregon)',
-    dataResidency: 'United States',
-    slaTier: 'Enterprise Plus',
-    tags: ['Production', 'Enterprise']
-  });
-
-  const [authSettings, setAuthSettings] = useState({
-    mfaRequired: 'always',
-    passwordMinLength: 12,
-    passwordExpiry: 90,
-    sessionMaxIdle: 30,
-    lockoutThreshold: 5
-  });
-
-  const [aiSettings, setAISettings] = useState({
-    roleMining: true,
-    accessRecommendations: true,
-    anomalyDetection: true,
-    confidenceThreshold: 0.75,
-    autoApproveBirthright: true,
-    autoFlagSod: true,
-    collapseDuplicates: true,
-    showExplainability: true,
-    piiMasking: true,
-    allowTraining: false
-  });
-
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success('Copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSave = () => {
-    toast.success('Settings saved successfully');
-    setIsDirty(false);
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
-    }
-  };
-
-  const handleDiscard = () => {
-    toast.info('Changes discarded');
-    setIsDirty(false);
-    if (pendingNavigation) {
-      navigate(pendingNavigation);
-      setPendingNavigation(null);
-    }
-  };
-
-  const handleFieldChange = () => {
-    setIsDirty(true);
-  };
-
-  const handleSectionChange = (sectionId: string) => {
-    if (isDirty) {
-      setPendingNavigation(`/settings?section=${sectionId}`);
-      setShowUnsavedDialog(true);
-    } else {
-      setActiveSection(sectionId);
-    }
-  };
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        if (isDirty) handleSave();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isDirty]);
-
-  return (
-    <div className="flex flex-col h-full">
-      {isDirty && <DirtyStateBanner onSave={handleSave} onDiscard={handleDiscard} />}
-
-      <div className="p-4 lg:p-6 max-w-[1600px] mx-auto w-full flex-1">
-        <div className="flex flex-col gap-6 h-full">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-semibold">Settings</h1>
-              <p className="text-sm text-muted-foreground mt-1">Configure your IAM platform settings and preferences</p>
             </div>
-            <div className="flex items-center gap-2">
-              {isDirty && (
-                <>
-                  <Button variant="outline" size="sm" onClick={handleDiscard}>
-                    Discard
-                  </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    Save
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+          </TabsContent>
 
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search settings..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <div className="flex gap-6 flex-1 min-h-0">
-            <aside className="hidden lg:block w-64 flex-shrink-0">
-              <nav className="sticky top-20 space-y-1">
-                {sections.map(section => {
-                  const Icon = section.icon;
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => handleSectionChange(section.id)}
-                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        activeSection === section.id
-                          ? 'bg-accent text-foreground font-medium'
-                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="w-4 h-4" />
-                        {section.label}
+          {/* Advanced Features Tab */}
+          <TabsContent value="advanced" className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Platform Features */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-6" style={{ 
+                    fontSize: 'var(--text-xl)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)'
+                  }}>
+                    Platform Features
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Custom Fields
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Enable custom attribute fields
+                        </div>
                       </div>
-                      {section.badge && (
-                        <Badge variant={section.badge.variant} className="text-[10px] h-4 px-1.5">
-                          {section.badge.text}
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-            </aside>
-
-            <div className="flex-1 min-w-0">
-              <div className="lg:hidden border-b sticky top-16 bg-background z-10 -mx-4 px-4 -mt-2 pt-2 mb-6">
-                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
-                  {sections.map(section => {
-                    const Icon = section.icon;
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => handleSectionChange(section.id)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
-                          activeSection === section.id
-                            ? 'bg-accent text-foreground font-medium'
-                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {section.label}
-                        {section.badge && (
-                          <Badge variant={section.badge.variant} className="text-[10px] h-4 px-1.5 ml-1">
-                            {section.badge.text}
-                          </Badge>
-                        )}
-                      </button>
-                    );
-                  })}
+                      <Switch 
+                        checked={settings.advanced.customFields}
+                        onCheckedChange={(checked) => updateSetting('advanced.customFields', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Workflow Engine
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Advanced workflow orchestration
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={settings.advanced.workflowEngine}
+                        onCheckedChange={(checked) => updateSetting('advanced.workflowEngine', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Reporting Engine
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Advanced reporting and analytics
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={settings.advanced.reportingEngine}
+                        onCheckedChange={(checked) => updateSetting('advanced.reportingEngine', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Bulk Import/Export
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Enable bulk data operations
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={settings.advanced.bulkImportExport}
+                        onCheckedChange={(checked) => updateSetting('advanced.bulkImportExport', checked)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <Tabs value={activeSection} className="w-full">
-                <TabsContent value="organization" className="space-y-6 mt-0">
-                  <SectionCard title="Organization Details" description="Basic information and settings for your organization">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                      <FieldGroup label="Organization Name" description="Display name for your organization" required>
-                        <Input
-                          value={orgData.name}
-                          onChange={e => {
-                            setOrgData({ ...orgData, name: e.target.value });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
-
-                      <FieldGroup label="Fiscal Year Start" description="Start month for fiscal year">
-                        <Select
-                          value={orgData.fiscalYearStart}
-                          onValueChange={v => {
-                            setOrgData({ ...orgData, fiscalYearStart: v });
-                            handleFieldChange();
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="January">January</SelectItem>
-                            <SelectItem value="April">April</SelectItem>
-                            <SelectItem value="July">July</SelectItem>
-                            <SelectItem value="October">October</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FieldGroup>
-
-                      <FieldGroup label="Timezone" description="Default timezone for scheduling">
-                        <Select
-                          value={orgData.timezone}
-                          onValueChange={v => {
-                            setOrgData({ ...orgData, timezone: v });
-                            handleFieldChange();
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                            <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                            <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                            <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                            <SelectItem value="UTC">UTC</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FieldGroup>
-
-                      <FieldGroup label="Locale" description="Language and region format">
-                        <Select
-                          value={orgData.locale}
-                          onValueChange={v => {
-                            setOrgData({ ...orgData, locale: v });
-                            handleFieldChange();
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en-US">English (US)</SelectItem>
-                            <SelectItem value="en-GB">English (UK)</SelectItem>
-                            <SelectItem value="es-ES">Spanish</SelectItem>
-                            <SelectItem value="fr-FR">French</SelectItem>
-                            <SelectItem value="de-DE">German</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FieldGroup>
-
-                      <div className="md:col-span-2">
-                        <FieldGroup label="Primary Email Domains" description="Verified domains for user email addresses">
-                          <DomainChipList
-                            domains={orgData.domains}
-                            onChange={domains => {
-                              setOrgData({ ...orgData, domains });
-                              handleFieldChange();
-                            }}
-                          />
-                        </FieldGroup>
+              {/* API & Integration */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-6" style={{ 
+                    fontSize: 'var(--text-xl)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)'
+                  }}>
+                    API & Integration
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          API Access
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Enable REST API access
+                        </div>
                       </div>
-
-                      <FieldGroup label="Security Email" description="Contact for security issues" required>
-                        <EmailField
-                          value={orgData.securityEmail}
-                          onChange={v => {
-                            setOrgData({ ...orgData, securityEmail: v });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
-
-                      <FieldGroup label="Support Email" description="Contact for user support" required>
-                        <EmailField
-                          value={orgData.supportEmail}
-                          onChange={v => {
-                            setOrgData({ ...orgData, supportEmail: v });
-                            handleFieldChange();
-                          }}
-                        />
-                      </FieldGroup>
+                      <Switch 
+                        checked={settings.advanced.apiAccess}
+                        onCheckedChange={(checked) => updateSetting('advanced.apiAccess', checked)}
+                      />
                     </div>
-
-                    <CardMetadata
-                      user="Sarah Johnson"
-                      timestamp="2 days ago"
-                      onViewAudit={() => setAuditDrawerOpen(true)}
-                    />
-                  </SectionCard>
-
-                  <SectionCard title="Environment & Residency" description="Deployment and data location information">
-                    <div className="space-y-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                        <FieldGroup label="Tenant ID" description="Unique identifier for your tenant">
-                          <div className="flex gap-2">
-                            <Input value={orgData.tenantId} readOnly className="font-mono text-sm bg-accent" />
-                            <Button variant="outline" size="sm" onClick={() => handleCopy(orgData.tenantId)}>
-                              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </Button>
-                          </div>
-                        </FieldGroup>
-
-                        <FieldGroup label="SLA Tier" description="Service level agreement">
-                          <Input value={orgData.slaTier} readOnly className="bg-accent" />
-                        </FieldGroup>
-
-                        <FieldGroup label="Region" description="Primary data center location">
-                          <Input value={orgData.region} readOnly className="bg-accent" />
-                        </FieldGroup>
-
-                        <FieldGroup label="Data Residency" description="Legal jurisdiction for data">
-                          <Input value={orgData.dataResidency} readOnly className="bg-accent" />
-                        </FieldGroup>
-                      </div>
-
-                      <div className="p-4 rounded-lg bg-accent/50 border">
-                        <div className="flex gap-3">
-                          <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          <div className="text-sm text-muted-foreground">
-                            <p className="font-medium text-foreground mb-1">Data Residency Notice</p>
-                            <p>
-                              Your data is stored and processed in the {orgData.region} region in compliance with local data
-                              residency requirements. All user data, audit logs, and platform metadata remain within the{' '}
-                              {orgData.dataResidency} jurisdiction.
-                            </p>
-                          </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Webhook Support
+                        </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Enable webhook notifications
                         </div>
                       </div>
+                      <Switch 
+                        checked={settings.advanced.webhookSupport}
+                        onCheckedChange={(checked) => updateSetting('advanced.webhookSupport', checked)}
+                      />
                     </div>
-
-                    <CardMetadata user="System" timestamp="Never modified" />
-                  </SectionCard>
-                </TabsContent>
-
-                <TabsContent value="authentication" className="mt-0">
-                  <AuthenticationTab onFieldChange={handleFieldChange} />
-                </TabsContent>
-
-                <TabsContent value="ai" className="space-y-6 mt-0">
-                  <SectionCard title="AI Features" description="Enable intelligent governance capabilities">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 rounded-lg border">
-                        <div>
-                          <div className="font-medium text-sm">Role Mining</div>
-                          <div className="text-xs text-muted-foreground mt-1">Discover role patterns from access data</div>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          SDK Access
                         </div>
-                        <Switch
-                          checked={aiSettings.roleMining}
-                          onCheckedChange={v => {
-                            setAISettings({ ...aiSettings, roleMining: v });
-                            handleFieldChange();
-                          }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 rounded-lg border">
-                        <div>
-                          <div className="font-medium text-sm">Access Recommendations</div>
-                          <div className="text-xs text-muted-foreground mt-1">Suggest access based on peer analysis</div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Enable SDK for developers
                         </div>
-                        <Switch
-                          checked={aiSettings.accessRecommendations}
-                          onCheckedChange={v => {
-                            setAISettings({ ...aiSettings, accessRecommendations: v });
-                            handleFieldChange();
-                          }}
-                        />
                       </div>
-
-                      <div className="flex items-center justify-between p-4 rounded-lg border">
-                        <div>
-                          <div className="font-medium text-sm">Anomaly Detection</div>
-                          <div className="text-xs text-muted-foreground mt-1">Flag unusual access patterns</div>
-                        </div>
-                        <Switch
-                          checked={aiSettings.anomalyDetection}
-                          onCheckedChange={v => {
-                            setAISettings({ ...aiSettings, anomalyDetection: v });
-                            handleFieldChange();
-                          }}
-                        />
-                      </div>
+                      <Switch 
+                        checked={settings.advanced.sdkAccess}
+                        onCheckedChange={(checked) => updateSetting('advanced.sdkAccess', checked)}
+                      />
                     </div>
-                    <CardMetadata user="Emily Davis" timestamp="1 week ago" onViewAudit={() => setAuditDrawerOpen(true)} />
-                  </SectionCard>
-
-                  <SectionCard title="Confidence & Auto-Actions" description="Configure AI decision thresholds">
-                    <div className="space-y-6">
-                      <FieldGroup
-                        label="Confidence Threshold"
-                        description={`AI recommendations above ${(aiSettings.confidenceThreshold * 100).toFixed(0)}% will be shown`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <Slider
-                            value={[aiSettings.confidenceThreshold * 100]}
-                            onValueChange={v => {
-                              setAISettings({ ...aiSettings, confidenceThreshold: v[0] / 100 });
-                              handleFieldChange();
-                            }}
-                            min={50}
-                            max={90}
-                            step={5}
-                            className="flex-1"
-                          />
-                          <span className="text-sm font-medium min-w-[50px]">
-                            {(aiSettings.confidenceThreshold * 100).toFixed(0)}%
-                          </span>
+                    <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <div>
+                        <div style={{ 
+                          fontSize: 'var(--text-body)',
+                          fontWeight: 'var(--font-weight-medium)',
+                          color: 'var(--text)',
+                          marginBottom: '4px'
+                        }}>
+                          Custom Branding
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Impact: ~{Math.round((1 - aiSettings.confidenceThreshold) * 40)}% fewer items to review
-                        </p>
-                      </FieldGroup>
-
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Auto-Actions</Label>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="auto-birthright"
-                              checked={aiSettings.autoApproveBirthright}
-                              onCheckedChange={v => {
-                                setAISettings({ ...aiSettings, autoApproveBirthright: v as boolean });
-                                handleFieldChange();
-                              }}
-                            />
-                            <Label htmlFor="auto-birthright" className="text-sm font-normal">
-                              Auto-approve low-risk birthright access
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="auto-sod"
-                              checked={aiSettings.autoFlagSod}
-                              onCheckedChange={v => {
-                                setAISettings({ ...aiSettings, autoFlagSod: v as boolean });
-                                handleFieldChange();
-                              }}
-                            />
-                            <Label htmlFor="auto-sod" className="text-sm font-normal">
-                              Auto-flag SoD conflicts
-                            </Label>
-                          </div>
+                        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                          Allow custom branding and themes
                         </div>
                       </div>
+                      <Switch 
+                        checked={settings.advanced.customBranding}
+                        onCheckedChange={(checked) => updateSetting('advanced.customBranding', checked)}
+                      />
                     </div>
-                    <CardMetadata user="Emily Davis" timestamp="1 week ago" onViewAudit={() => setAuditDrawerOpen(true)} />
-                  </SectionCard>
-                </TabsContent>
-              </Tabs>
-
-              {isDirty && <StickyFooter onCancel={handleDiscard} onSave={handleSave} />}
->>>>>>> 0e13b7ceb1af6a5cf934dc48a93b13a335daf7f4
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Drawer open={ssoDrawerOpen} onOpenChange={setSsoDrawerOpen}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader>
-            <DrawerTitle>Configure {selectedProvider || 'SSO'} Provider</DrawerTitle>
-            <DrawerDescription>Set up single sign-on integration</DrawerDescription>
-          </DrawerHeader>
-          <div className="p-6 space-y-6 overflow-y-auto">
-            <SectionCard title="Connection Settings" description="Provider configuration">
-              <div className="space-y-4">
-                <FieldGroup label="Provider Name" required>
-                  <Input placeholder={`${selectedProvider || 'SSO'} Production`} />
-                </FieldGroup>
-
-                <FieldGroup label="Issuer URL" required>
-                  <Input placeholder="https://provider.com/issuer" />
-                </FieldGroup>
-
-                <FieldGroup label="Client ID" required>
-                  <Input placeholder="abc123..." />
-                </FieldGroup>
-
-                <FieldGroup label="Client Secret" required>
-                  <SecretField value="••••••••••••••••" onRotate={() => toast.info('Secret rotated')} />
-                </FieldGroup>
+                  </div>
+                </div>
               </div>
-            </SectionCard>
-          </div>
-          <DrawerFooter>
-            <Button variant="outline" onClick={() => setSsoDrawerOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setSsoDrawerOpen(false)} className="gap-2">
-              <Play className="w-4 h-4" />
-              Test Sign-In
-            </Button>
-            <Button onClick={() => setSsoDrawerOpen(false)}>Save Provider</Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+            </div>
+          </TabsContent>
 
-      <Drawer open={auditDrawerOpen} onOpenChange={setAuditDrawerOpen}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader>
-            <DrawerTitle>Change History</DrawerTitle>
-            <DrawerDescription>View all changes to this setting</DrawerDescription>
-          </DrawerHeader>
-          <div className="p-6 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Actor</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Field</TableHead>
-                  <TableHead>Timestamp</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">sarah.johnson@acme.com</TableCell>
-                  <TableCell>Updated</TableCell>
-                  <TableCell className="text-xs">Organization Name</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">2 days ago</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">michael.chen@acme.com</TableCell>
-                  <TableCell>Updated</TableCell>
-                  <TableCell className="text-xs">Security Email</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">1 week ago</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        </DrawerContent>
-      </Drawer>
+          {/* Monitoring & Logs Tab */}
+          <TabsContent value="monitoring" className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* System Monitoring */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-6" style={{ 
+                    fontSize: 'var(--text-xl)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)'
+                  }}>
+                    System Monitoring
+                  </h3>
+                  <div className="space-y-4">
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">CPU Usage</span>
+                        <span className="text-sm text-muted-foreground">{systemHealth.cpuUsage}%</span>
+                      </div>
+                      <Progress value={systemHealth.cpuUsage} className="mb-2" />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>+2% from last hour</span>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Memory Usage</span>
+                        <span className="text-sm text-muted-foreground">{systemHealth.memoryUsage}%</span>
+                      </div>
+                      <Progress value={systemHealth.memoryUsage} className="mb-2" />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <TrendingDown className="w-3 h-3" />
+                        <span>-1% from last hour</span>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Disk Usage</span>
+                        <span className="text-sm text-muted-foreground">{systemHealth.diskUsage}%</span>
+                      </div>
+                      <Progress value={systemHealth.diskUsage} className="mb-2" />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>2.1 TB used of 5.5 TB</span>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              </div>
 
-      <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Unsaved Changes</DialogTitle>
-            <DialogDescription>You have unsaved changes. What would you like to do?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowUnsavedDialog(false);
-                setPendingNavigation(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button variant="outline" onClick={handleDiscard}>
-              Discard Changes
-            </Button>
-            <Button onClick={handleSave}>Save & Continue</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {/* Recent Activity */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-6" style={{ 
+                    fontSize: 'var(--text-xl)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--text)'
+                  }}>
+                    Recent Activity
+                  </h3>
+                  <div className="space-y-3">
+                    {recentActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border" style={{ 
+                        backgroundColor: 'var(--background)',
+                        borderColor: 'var(--border)'
+                      }}>
+                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                          activity.type === 'success' ? 'bg-green-500' :
+                          activity.type === 'warning' ? 'bg-yellow-500' :
+                          activity.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                        }`} />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{activity.action}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {activity.user} • {activity.timestamp}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* System Information */}
+            <div className="mt-8">
+              <h3 className="mb-6" style={{ 
+                fontSize: 'var(--text-xl)',
+                fontWeight: 'var(--font-weight-semibold)',
+                color: 'var(--text)'
+              }}>
+                System Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Server className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Last Backup</p>
+                      <p className="text-xs text-muted-foreground">{systemHealth.lastBackup}</p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 rounded-full">
+                      <Timer className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Next Maintenance</p>
+                      <p className="text-xs text-muted-foreground">{systemHealth.nextMaintenance}</p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <Wifi className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Network Latency</p>
+                      <p className="text-xs text-muted-foreground">{systemHealth.networkLatency}ms</p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-full">
+                      <Activity className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Active Sessions</p>
+                      <p className="text-xs text-muted-foreground">{systemHealth.activeConnections}</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 }

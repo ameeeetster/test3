@@ -11,6 +11,13 @@ export interface LifecycleRule {
   status: 'draft' | 'test' | 'published';
   conditions: number;
   actions: number;
+  lastExecuted?: string;
+  executionCount?: number;
+  successRate?: number;
+  avgExecutionTime?: string;
+  requiresApproval?: boolean;
+  riskLevel?: 'low' | 'medium' | 'high';
+  tags?: string[];
 }
 
 interface PriorityListProps {
