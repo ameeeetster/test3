@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,10 +8,13 @@ import { WizardStepper } from '../components/WizardStepper';
 import { ImpactPreviewBar } from '../components/ImpactPreviewBar';
 import { RiskChip } from '../components/RiskChip';
 import { Badge } from '../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, AlertTriangle, Users, Package, Plus, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, AlertTriangle, Users, Package, Plus, X, Shield, Settings, FileText, UserCheck } from 'lucide-react';
 import { Checkbox } from '../components/ui/checkbox';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { RBACService, Permission } from '../services/rbacService';
+import { IdentityService, Identity } from '../services/identityService';
+import { toast } from 'sonner';
 
 const wizardSteps = [
   { id: 'basics', label: 'Basics', description: 'Role information' },
@@ -20,15 +23,15 @@ const wizardSteps = [
   { id: 'review', label: 'Review', description: 'Confirm & create' }
 ];
 
-const mockEntitlements = [
-  { id: 'E-1', name: 'Create Purchase Orders', app: 'Procurement', appIcon: '💰', type: 'Permission', risk: 'High' as const },
-  { id: 'E-2', name: 'Approve Invoices', app: 'Procurement', appIcon: '💰', type: 'Action', risk: 'High' as const, sodWarning: true },
-  { id: 'E-3', name: 'View Financial Reports', app: 'QuickBooks', appIcon: '📊', type: 'Data Access', risk: 'Medium' as const },
-  { id: 'E-4', name: 'Edit Chart of Accounts', app: 'QuickBooks', appIcon: '📊', type: 'Permission', risk: 'Critical' as const },
-  { id: 'E-5', name: 'Initiate Wire Transfers', app: 'Treasury', appIcon: '🏦', type: 'Action', risk: 'Critical' as const, sodWarning: true },
-  { id: 'E-6', name: 'View Payroll Data', app: 'Workday', appIcon: '👥', type: 'Data Access', risk: 'High' as const },
-  { id: 'E-7', name: 'Deploy to Production', app: 'AWS', appIcon: '☁️', type: 'Action', risk: 'Critical' as const }
-];
+// Permission categories with icons
+const permissionCategories = {
+  'User Management': { icon: Users, color: 'blue' },
+  'Role Management': { icon: Shield, color: 'purple' },
+  'Audit & Compliance': { icon: FileText, color: 'green' },
+  'Organization': { icon: Settings, color: 'orange' },
+  'Certification': { icon: UserCheck, color: 'red' },
+  'Other': { icon: Package, color: 'gray' }
+};
 
 // Mock data for rule criteria
 const ruleTypes = [
@@ -68,20 +71,68 @@ export function NewRolePage() {
   const [owner, setOwner] = useState('');
   const [riskCategory, setRiskCategory] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
 
-  // Step 2: Entitlements
-  const [selectedEntitlements, setSelectedEntitlements] = useState<Set<string>>(new Set());
-  const [filterApp, setFilterApp] = useState('all');
+  // Identities for owner dropdown
+  const [identities, setIdentities] = useState<Identity[]>([]);
+  const [isLoadingIdentities, setIsLoadingIdentities] = useState(true);
+  const [manualOwnerEmail, setManualOwnerEmail] = useState('');
+
+  // Step 2: Permissions (RBAC)
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissionsByCategory, setPermissionsByCategory] = useState<Record<string, Permission[]>>({});
+  const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   // Step 3: Membership Rules
   const [membershipRules, setMembershipRules] = useState<MembershipRule[]>([]);
 
-  const apps = Array.from(new Set(mockEntitlements.map(e => e.app)));
-  const filteredEntitlements = mockEntitlements.filter(e => 
-    filterApp === 'all' || e.app === filterApp
-  );
+  // Loading and error states
+  const [isCreating, setIsCreating] = useState(false);
 
-  const selectedEntitlementsList = mockEntitlements.filter(e => selectedEntitlements.has(e.id));
-  const hasSodConflicts = selectedEntitlementsList.some(e => e.sodWarning);
+  // Load permissions and identities on component mount
+  useEffect(() => {
+    loadPermissions();
+    loadIdentities();
+  }, []);
+
+  const loadPermissions = async () => {
+    try {
+      setIsLoadingPermissions(true);
+      const permissionsData = await RBACService.getPermissionsByCategory();
+      setPermissionsByCategory(permissionsData);
+      
+      // Flatten permissions for easy access
+      const allPermissions = Object.values(permissionsData).flat();
+      setPermissions(allPermissions);
+    } catch (error) {
+      console.error('Failed to load permissions:', error);
+      toast.error('Failed to load permissions. Using fallback data.');
+    } finally {
+      setIsLoadingPermissions(false);
+    }
+  };
+
+  const loadIdentities = async () => {
+    try {
+      setIsLoadingIdentities(true);
+      console.log('Loading identities...');
+      const identitiesData = await IdentityService.getIdentities();
+      console.log('Identities loaded:', identitiesData);
+      setIdentities(identitiesData);
+    } catch (error) {
+      console.error('Failed to load identities:', error);
+      toast.error('Failed to load identities. Using fallback data.');
+    } finally {
+      setIsLoadingIdentities(false);
+    }
+  };
+
+  const categories = Object.keys(permissionsByCategory);
+  const filteredPermissions = filterCategory === 'all' 
+    ? permissions 
+    : permissionsByCategory[filterCategory] || [];
+
+  const selectedPermissionsList = permissions.filter(p => selectedPermissions.has(p.key));
   const estimatedMembers = 24; // Mock calculation
 
   const handleNext = () => {
@@ -96,19 +147,53 @@ export function NewRolePage() {
     }
   };
 
-  const handleCreate = () => {
-    // Submit logic here
-    navigate('/access/roles/R-1005');
+  const handleCreate = async () => {
+    try {
+      setIsCreating(true);
+      
+      // Prepare role data
+      const roleData = {
+        name: roleName,
+        description: description,
+        permissions: Array.from(selectedPermissions) as string[]
+      };
+
+      // Create role via RBAC API
+      const createdRole = await RBACService.createRole(roleData);
+      
+      // Show success message
+      toast.success(`Role "${roleName}" created successfully!`);
+      
+      // Navigate to the roles page
+      navigate('/access/roles');
+      
+    } catch (error: any) {
+      console.error('Failed to create role:', error);
+      
+      // Show more specific error message
+      const errorMessage = error.message || 'Failed to create role. Please try again.';
+      toast.error(errorMessage);
+      
+      // Log additional details for debugging
+      if (error.details) {
+        console.error('Error details:', error.details);
+      }
+      if (error.hint) {
+        console.error('Error hint:', error.hint);
+      }
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const toggleEntitlement = (id: string) => {
-    const newSet = new Set(selectedEntitlements);
-    if (newSet.has(id)) {
-      newSet.delete(id);
+  const togglePermission = (permissionKey: string) => {
+    const newSet = new Set(selectedPermissions);
+    if (newSet.has(permissionKey)) {
+      newSet.delete(permissionKey);
     } else {
-      newSet.add(id);
+      newSet.add(permissionKey);
     }
-    setSelectedEntitlements(newSet);
+    setSelectedPermissions(newSet);
   };
 
   const addMembershipRule = () => {
@@ -144,7 +229,7 @@ export function NewRolePage() {
       case 0:
         return roleName && description && owner;
       case 1:
-        return selectedEntitlements.size > 0;
+        return selectedPermissions.size > 0;
       case 2:
       case 3:
         return true;
@@ -224,14 +309,74 @@ export function NewRolePage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="owner">Owner *</Label>
-                  <Input
-                    id="owner"
-                    value={owner}
-                    onChange={(e) => setOwner(e.target.value)}
-                    placeholder="Select or enter owner email"
-                    className="mt-2"
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="owner">Owner *</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={loadIdentities}
+                      disabled={isLoadingIdentities}
+                      className="text-xs"
+                    >
+                      {isLoadingIdentities ? (
+                        <>
+                          <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1" />
+                          Loading...
+                        </>
+                      ) : (
+                        'Refresh'
+                      )}
+                    </Button>
+                  </div>
+                  <Select value={owner} onValueChange={setOwner}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select or enter owner email" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingIdentities ? (
+                        <SelectItem value="loading" disabled>
+                          Loading identities...
+                        </SelectItem>
+                      ) : identities.length === 0 ? (
+                        <>
+                          <SelectItem value="no-identities" disabled>
+                            No identities found
+                          </SelectItem>
+                          <SelectItem value="manual-input">
+                            Enter email manually
+                          </SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          {identities.map((identity) => (
+                            <SelectItem key={identity.id} value={identity.email}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{identity.name}</span>
+                                <span className="text-xs text-muted-foreground">{identity.email}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="manual-input">
+                            Enter email manually
+                          </SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  
+                  {owner === 'manual-input' && (
+                    <Input
+                      placeholder="Enter owner email"
+                      value={manualOwnerEmail}
+                      onChange={(e) => {
+                        setManualOwnerEmail(e.target.value);
+                        setOwner(e.target.value);
+                      }}
+                      className="mt-2"
+                    />
+                  )}
+                  
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', marginTop: '8px' }}>
                     The owner is responsible for reviewing and maintaining this role
                   </p>
@@ -259,7 +404,7 @@ export function NewRolePage() {
             </div>
           )}
 
-          {/* Step 2: Entitlements */}
+          {/* Step 2: Permissions (RBAC) */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -269,91 +414,130 @@ export function NewRolePage() {
                     fontWeight: 'var(--font-weight-semibold)',
                     color: 'var(--text)'
                   }}>
-                    Select Entitlements
+                    Select Permissions
                   </h3>
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)', marginTop: '4px' }}>
-                    {selectedEntitlements.size} selected
+                    {selectedPermissions.size} permissions selected
                   </p>
                 </div>
 
-                <select
-                  value={filterApp}
-                  onChange={(e) => setFilterApp(e.target.value)}
-                  className="px-3 py-2 rounded-md border"
-                  style={{
-                    borderColor: 'var(--border)',
-                    backgroundColor: 'var(--input-background)',
-                    color: 'var(--text)',
-                    fontSize: 'var(--text-sm)'
-                  }}
-                >
-                  <option value="all">All Applications</option>
-                  {apps.map(app => (
-                    <option key={app} value={app}>{app}</option>
-                  ))}
-                </select>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {hasSodConflicts && (
-                <div className="flex items-start gap-3 p-4 rounded-lg border" style={{
-                  backgroundColor: 'var(--warning-bg)',
-                  borderColor: 'var(--warning-border)'
-                }}>
-                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />
-                  <div>
-                    <div style={{ 
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-weight-medium)',
-                      color: 'var(--warning)'
-                    }}>
-                      SoD Conflict Detected
-                    </div>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      Some selected entitlements may create segregation of duties conflicts
+              {isLoadingPermissions ? (
+                <div className="flex items-center justify-center h-[400px]">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                      Loading permissions...
                     </p>
                   </div>
                 </div>
-              )}
-
-              <ScrollArea className="h-[500px]">
-                <div className="flex flex-col gap-2 pr-4">
-                  {filteredEntitlements.map((ent) => (
-                    <div
-                      key={ent.id}
-                      onClick={() => toggleEntitlement(ent.id)}
-                      className="flex items-center gap-3 p-4 rounded-lg border text-left transition-all hover:shadow-sm cursor-pointer"
-                      style={{
-                        borderColor: selectedEntitlements.has(ent.id) ? 'var(--primary)' : 'var(--border)',
-                        backgroundColor: selectedEntitlements.has(ent.id) ? 'var(--accent)' : 'var(--surface)'
-                      }}
-                    >
-                      <Checkbox 
-                        checked={selectedEntitlements.has(ent.id)} 
-                        onCheckedChange={() => toggleEntitlement(ent.id)}
-                      />
-                      <span style={{ fontSize: '16px' }}>{ent.appIcon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div style={{ 
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: 'var(--font-weight-medium)',
-                            color: 'var(--text)'
-                          }}>
-                            {ent.name}
+              ) : (
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-4 pr-4">
+                    {filterCategory === 'all' ? (
+                      // Show all categories
+                      categories.map(category => {
+                        const categoryPermissions = permissionsByCategory[category] || [];
+                        if (categoryPermissions.length === 0) return null;
+                        
+                        const CategoryIcon = permissionCategories[category as keyof typeof permissionCategories]?.icon || Package;
+                        
+                        return (
+                          <div key={category} className="space-y-2">
+                            <div className="flex items-center gap-2 pb-2 border-b">
+                              <CategoryIcon className="w-4 h-4" />
+                              <h4 style={{ 
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 'var(--font-weight-medium)',
+                                color: 'var(--text)'
+                              }}>
+                                {category}
+                              </h4>
+                              <Badge variant="secondary" className="text-xs">
+                                {categoryPermissions.length}
+                              </Badge>
+                            </div>
+                            <div className="space-y-2">
+                              {categoryPermissions.map((permission) => (
+                                <div
+                                  key={permission.key}
+                                  onClick={() => togglePermission(permission.key)}
+                                  className="flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:shadow-sm cursor-pointer"
+                                  style={{
+                                    borderColor: selectedPermissions.has(permission.key) ? 'var(--primary)' : 'var(--border)',
+                                    backgroundColor: selectedPermissions.has(permission.key) ? 'var(--accent)' : 'var(--surface)'
+                                  }}
+                                >
+                                  <Checkbox 
+                                    checked={selectedPermissions.has(permission.key)} 
+                                    onCheckedChange={() => togglePermission(permission.key)}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div style={{ 
+                                      fontSize: 'var(--text-sm)',
+                                      fontWeight: 'var(--font-weight-medium)',
+                                      color: 'var(--text)'
+                                    }}>
+                                      {permission.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </div>
+                                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+                                      {permission.description}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          {ent.sodWarning && (
-                            <AlertTriangle className="w-4 h-4" style={{ color: 'var(--warning)' }} />
-                          )}
-                        </div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
-                          {ent.app} • {ent.type}
-                        </div>
+                        );
+                      })
+                    ) : (
+                      // Show filtered permissions
+                      <div className="space-y-2">
+                        {filteredPermissions.map((permission) => (
+                          <div
+                            key={permission.key}
+                            onClick={() => togglePermission(permission.key)}
+                            className="flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:shadow-sm cursor-pointer"
+                            style={{
+                              borderColor: selectedPermissions.has(permission.key) ? 'var(--primary)' : 'var(--border)',
+                              backgroundColor: selectedPermissions.has(permission.key) ? 'var(--accent)' : 'var(--surface)'
+                            }}
+                          >
+                            <Checkbox 
+                              checked={selectedPermissions.has(permission.key)} 
+                              onCheckedChange={() => togglePermission(permission.key)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div style={{ 
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 'var(--font-weight-medium)',
+                                color: 'var(--text)'
+                              }}>
+                                {permission.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </div>
+                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
+                                {permission.description}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <RiskChip risk={ent.risk} size="sm" />
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                    )}
+                  </div>
+                </ScrollArea>
+              )}
             </div>
           )}
 
@@ -553,9 +737,9 @@ export function NewRolePage() {
 
                 <div className="p-4 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Package className="w-4 h-4" style={{ color: 'var(--info)' }} />
+                    <Shield className="w-4 h-4" style={{ color: 'var(--info)' }} />
                     <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
-                      Entitlements
+                      Permissions
                     </span>
                   </div>
                   <div style={{ 
@@ -563,7 +747,7 @@ export function NewRolePage() {
                     fontWeight: 'var(--font-weight-semibold)',
                     color: 'var(--text)'
                   }}>
-                    {selectedEntitlements.size}
+                    {selectedPermissions.size}
                   </div>
                 </div>
 
@@ -609,38 +793,17 @@ export function NewRolePage() {
 
                 <div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)', marginBottom: '8px' }}>
-                    Selected Entitlements
+                    Selected Permissions
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {selectedEntitlementsList.map((ent) => (
-                      <Badge key={ent.id} variant="outline">
-                        {ent.appIcon} {ent.name}
+                    {selectedPermissionsList.map((permission) => (
+                      <Badge key={permission.key} variant="outline">
+                        {permission.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </Badge>
                     ))}
                   </div>
                 </div>
               </div>
-
-              {hasSodConflicts && (
-                <div className="flex items-start gap-3 p-4 rounded-lg border" style={{
-                  backgroundColor: 'var(--warning-bg)',
-                  borderColor: 'var(--warning-border)'
-                }}>
-                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />
-                  <div className="flex-1">
-                    <div style={{ 
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-weight-medium)',
-                      color: 'var(--warning)'
-                    }}>
-                      Warning: SoD Conflicts
-                    </div>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      This role contains entitlements that may create segregation of duties conflicts. Consider reviewing the composition before creating.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -670,11 +833,20 @@ export function NewRolePage() {
             {currentStep === wizardSteps.length - 1 ? (
               <Button
                 onClick={handleCreate}
-                disabled={!canProceed()}
+                disabled={!canProceed() || isCreating}
                 className="gap-2"
               >
-                <Check className="w-4 h-4" />
-                Create Role
+                {isCreating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Create Role
+                  </>
+                )}
               </Button>
             ) : (
               <Button
@@ -694,7 +866,7 @@ export function NewRolePage() {
       {currentStep === 3 && (
         <ImpactPreviewBar
           membersAffected={estimatedMembers}
-          entitlementsChanged={selectedEntitlements.size}
+          entitlementsChanged={selectedPermissions.size}
           riskChange={riskCategory === 'High' || riskCategory === 'Critical' ? 'increase' : 'none'}
         />
       )}

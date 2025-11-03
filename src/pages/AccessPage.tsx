@@ -23,6 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { toast } from 'sonner';
+import { RBACService } from '../services/rbacService';
+import { fetchEntitlements, fetchApplications } from '../services/mockDataService';
 import { 
   Plus, Search, Filter, Download, Upload, MoreVertical, 
   Shield, Users, Package, AlertTriangle, TrendingUp, TrendingDown,
@@ -252,6 +254,10 @@ export function AccessPage() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // State for real roles data
+  const [roles, setRoles] = useState<typeof mockRoles>(mockRoles);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+  
   // Determine current tab from URL path
   const currentTab = useMemo(() => {
     const path = location.pathname;
@@ -263,7 +269,101 @@ export function AccessPage() {
     return 'roles';
   }, [location.pathname]);
   
+  // Load roles when component mounts or when roles tab is active
+  React.useEffect(() => {
+    if (currentTab === 'roles') {
+      loadRoles();
+    } else if (currentTab === 'entitlements') {
+      loadEntitlements();
+    } else if (currentTab === 'applications') {
+      loadApplications();
+    }
+  }, [currentTab]);
+  
+  const loadRoles = async () => {
+    try {
+      console.log('🔄 Loading roles...');
+      setIsLoadingRoles(true);
+      const rolesData = await RBACService.getRoles();
+      console.log('📦 Roles data received:', rolesData);
+      
+      if (rolesData && rolesData.length > 0) {
+        console.log(`✅ Found ${rolesData.length} roles`);
+        // Transform database roles to match mockRoles structure
+        const transformedRoles = rolesData.map((role: any) => {
+          console.log('🔄 Processing role:', role);
+          
+          // Extract owner information
+          let ownerName = 'System';
+          let ownerAvatar = 'SY';
+          
+          // Try different possible column names for created_by
+          const createdBy = role.created_by || role.created_by_id;
+          
+          if (createdBy) {
+            ownerName = 'You';
+            ownerAvatar = 'YO';
+          }
+          
+          return {
+            id: role.id,
+            name: role.name || 'Unnamed Role',
+            description: role.description || '',
+            owner: { name: ownerName, avatar: ownerAvatar },
+            members: role.assigned_user_count || role.members || 0,
+            applications: [], // TODO: fetch actual applications
+            risk: 'Medium' as const, // TODO: calculate actual risk
+            sodConflicts: 0, // TODO: calculate actual conflicts
+            updated: 'Just now',
+            created_at: (role as any).created_at
+          };
+        });
+        console.log('✨ Transformed roles:', transformedRoles);
+        setRoles(transformedRoles);
+      } else {
+        console.log('⚠️ No roles found in database, using mockRoles');
+        setRoles(mockRoles);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load roles:', error);
+      // Keep mockRoles as fallback
+      setRoles(mockRoles);
+    } finally {
+      setIsLoadingRoles(false);
+    }
+  };
+
+  const loadEntitlements = async () => {
+    try {
+      setIsLoadingEntitlements(true);
+      const data = await fetchEntitlements();
+      setEntitlements(data);
+    } catch (error) {
+      console.error('❌ Failed to load entitlements:', error);
+      setEntitlements([]);
+    } finally {
+      setIsLoadingEntitlements(false);
+    }
+  };
+
+  const loadApplications = async () => {
+    try {
+      setIsLoadingApps(true);
+      const data = await fetchApplications();
+      setApplications(data);
+    } catch (error) {
+      console.error('❌ Failed to load applications:', error);
+      setApplications([]);
+    } finally {
+      setIsLoadingApps(false);
+    }
+  };
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [entitlements, setEntitlements] = useState<any[]>([]);
+  const [isLoadingEntitlements, setIsLoadingEntitlements] = useState(false);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [selectedRole, setSelectedRole] = useState<typeof mockRoles[0] | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -312,9 +412,14 @@ export function AccessPage() {
   };
 
   const handleViewRoleDetail = () => {
-    if (selectedRole) {
-      navigate(`/access/roles/${selectedRole.id}`);
-    }
+    // Close the quick view drawer
+    setDrawerOpen(false);
+    // Navigate to full role detail page after a brief delay to allow drawer to close
+    setTimeout(() => {
+      if (selectedRole) {
+        navigate(`/access/roles/${selectedRole.id}`);
+      }
+    }, 100);
   };
 
   // Role action handlers
@@ -501,6 +606,14 @@ export function AccessPage() {
         {/* Content */}
         {currentTab === 'roles' && (
           <div className="flex flex-col gap-4">
+            {isLoadingRoles && (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                  Loading roles...
+                </p>
+              </div>
+            )}
             {/* Toolbar */}
             <div className="flex flex-col gap-3">
               <div className="flex flex-col lg:flex-row gap-3">
@@ -632,7 +745,7 @@ export function AccessPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockRoles.map((role) => (
+                    {roles.map((role) => (
                       <TableRow
                         key={role.id}
                         onClick={() => handleRoleClick(role)}
@@ -880,7 +993,7 @@ export function AccessPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockEntitlements.map((ent) => (
+                    {(isLoadingEntitlements ? [] : entitlements).map((ent: any) => (
                       <TableRow key={ent.id} className="cursor-pointer hover:bg-accent/50">
                         <TableCell>
                           <div style={{ 
@@ -888,12 +1001,12 @@ export function AccessPage() {
                             fontWeight: 'var(--font-weight-medium)',
                             color: 'var(--text)'
                           }}>
-                            {ent.name}
+                            {ent.key?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || ent.name}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span style={{ fontSize: '16px' }}>{ent.appIcon}</span>
+                            <span style={{ fontSize: '16px' }}>{ent.app_icon || '🔧'}</span>
                             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                               {ent.app}
                             </span>
@@ -901,25 +1014,25 @@ export function AccessPage() {
                         </TableCell>
                         <TableCell>
                           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
-                            {ent.assigned}
+                            {ent.assigned || 0}
                           </span>
                         </TableCell>
                         <TableCell>
                           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                            {ent.lastUsed}
+                            {ent.lastUsed || '—'}
                           </span>
                         </TableCell>
                         <TableCell>
                           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                            {ent.owner}
+                            {ent.owner || '—'}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <RiskChip risk={ent.risk} size="sm" />
+                          <RiskChip risk={(ent.risk as any) || 'Medium'} size="sm" />
                         </TableCell>
                         <TableCell>
-                          {ent.sodConflicts > 0 ? (
-                            <ConflictChip count={ent.sodConflicts} />
+                          {(ent.sod_conflicts || ent.sodConflicts) > 0 ? (
+                            <ConflictChip count={ent.sod_conflicts || ent.sodConflicts} />
                           ) : (
                             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>
                               None
@@ -1044,7 +1157,7 @@ export function AccessPage() {
 
             {/* Applications Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockApps.map((app) => (
+              {(isLoadingApps ? [] : applications).map((app: any) => (
                 <AppTile 
                   key={app.id} 
                   app={app}

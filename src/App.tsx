@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import AuthPage from './pages/AuthPage';
+import RegisterPage from './pages/RegisterPage';
 import { ProtectedLayout } from './components/ProtectedLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { HomePage } from './pages/HomePage';
@@ -29,6 +30,8 @@ import { LifecyclePage } from './pages/LifecyclePage';
 import { JmlPage } from './pages/JmlPage';
 import { ISRDemoPage } from './pages/ISRDemoPage';
 import { SupabaseConnectionTest } from './components/SupabaseConnectionTest';
+import AcceptInvitePage from './pages/AcceptInvitePage';
+import TestIdentitiesPage from './pages/TestIdentitiesPage';
 
 export default function App() {
   return (
@@ -40,6 +43,8 @@ export default function App() {
             <Routes>
               {/* Public */}
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
               {/* Protected */}
               <Route element={<ProtectedLayout />}>
@@ -74,6 +79,8 @@ export default function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 {/* Supabase connection test - remove after verifying connection */}
                 <Route path="/test-connection" element={<SupabaseConnectionTest />} />
+                {/* Test identities Edge Function */}
+                <Route path="/test-identities" element={<TestIdentitiesPage />} />
               </Route>
 
               {/* Fallback */}

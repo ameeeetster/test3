@@ -1187,8 +1187,34 @@ export class MockDataService {
   }
 }
 
+// Real data services for Access tabs
+import { supabase } from '../lib/supabase';
+
+export async function fetchEntitlements() {
+  // Backed by v_entitlements view
+  const { data, error } = await supabase
+    .from('v_entitlements')
+    .select('*')
+    .order('app');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchApplications() {
+  // Backed by v_applications view
+  const { data, error } = await supabase
+    .from('v_applications')
+    .select('*')
+    .order('name');
+  if (error) throw error;
+  return data || [];
+}
+
 // Export singleton instance
 export const mockDataService = new MockDataService();
+
+
+
 
 
 

@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { useUser, Permission } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { RoleSwitcher } from './RoleSwitcher';
 import { toast } from 'sonner';
@@ -56,6 +57,24 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const { user, hasPermission } = useUser();
+  const { session, profile } = useAuth();
+
+  const displayName = React.useMemo(() => {
+    return (
+      profile?.full_name ||
+      session?.user?.user_metadata?.full_name ||
+      session?.user?.email ||
+      user.name
+    );
+  }, [profile, session, user.name]);
+
+  const subLabel = React.useMemo(() => {
+    return (
+      profile?.email ||
+      session?.user?.email ||
+      user.department || ''
+    );
+  }, [profile, session, user.department]);
 
   React.useEffect(() => {
     if (darkMode) {
@@ -171,7 +190,7 @@ export function AppShell({ children }: AppShellProps) {
                     fontSize: 'var(--text-sm)',
                     fontWeight: 'var(--font-weight-semibold)'
                   }}>
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {displayName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -179,11 +198,11 @@ export function AppShell({ children }: AppShellProps) {
                     fontSize: 'var(--text-body)',
                     fontWeight: 'var(--font-weight-semibold)',
                     color: 'var(--text)'
-                  }}>{user.name}</div>
+                  }}>{displayName}</div>
                   <div className="truncate" style={{ 
                     fontSize: 'var(--text-sm)',
                     color: 'var(--muted-foreground)'
-                  }}>{user.department}</div>
+                  }}>{subLabel}</div>
                 </div>
                 <ChevronDown className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
               </div>
@@ -421,7 +440,7 @@ export function AppShell({ children }: AppShellProps) {
                   fontSize: 'var(--text-xs)',
                   fontWeight: 'var(--font-weight-semibold)'
                 }}>
-                  {user.name.split(' ').map(n => n[0]).join('')}
+                  {displayName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </Button>

@@ -42,6 +42,7 @@ interface RoleQuickViewProps {
     risk: 'Low' | 'Medium' | 'High';
     sodConflicts: number;
     updated: string;
+    created_at?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -110,8 +111,47 @@ export function RoleQuickView({
 }: RoleQuickViewProps) {
   const [copiedId, setCopiedId] = useState(false);
   const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
+  const [realPermissions, setRealPermissions] = useState<any[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
+
+  // Define the function before useEffect
+  const loadRealPermissions = React.useCallback(async () => {
+    if (!role) return;
+    
+    try {
+      setIsLoadingPermissions(true);
+      const { RBACService } = await import('../services/rbacService');
+      const permissions = await RBACService.getRolePermissions(role.id);
+      setRealPermissions(permissions);
+    } catch (error) {
+      console.error('Failed to load permissions:', error);
+    } finally {
+      setIsLoadingPermissions(false);
+    }
+  }, [role]);
+
+  // Fetch real permissions when drawer opens
+  React.useEffect(() => {
+    if (open && role) {
+      loadRealPermissions();
+    }
+  }, [open, role, loadRealPermissions]);
 
   if (!role) return null;
+
+  // Calculate real updated time from created_at
+  const getUpdatedTime = () => {
+    if (role.created_at) {
+      const created = new Date(role.created_at);
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
+      if (diffInHours < 1) return 'Just now';
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+    return role.updated;
+  };
 
   const mockData = getMockRoleData(role.id);
 
@@ -138,9 +178,10 @@ export function RoleQuickView({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent 
-        className="max-h-[90vh]" 
+        className="max-h-screen" 
+        style={{ maxWidth: '900px', width: '100%' }}
         onKeyDown={handleKeyDown}
       >
         {/* Visually hidden title and description for accessibility */}
@@ -184,11 +225,11 @@ export function RoleQuickView({
                 >
                   {mockData.status}
                 </Badge>
-                <span 
+                  <span 
                   className="ml-auto text-xs"
                   style={{ color: 'var(--muted)' }}
                 >
-                  Updated {role.updated}
+                  Updated {getUpdatedTime()}
                 </span>
               </div>
 
@@ -322,26 +363,36 @@ export function RoleQuickView({
                 {/* Composition Preview */}
                 <ContentCard title="Composition" icon={Package}>
                   <div className="space-y-1.5">
-                  {mockData.topEntitlements.map((ent) => (
-                    <div
-                      key={ent.id}
-                      className="flex items-center gap-2.5 p-2 rounded-lg border transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <div className="text-base">{ent.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm truncate" style={{ color: 'var(--text)' }}>
-                            {ent.name}
-                          </span>
-                          <RiskChip risk={ent.risk} />
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                          {ent.app} · Used {ent.lastUsedPercent}%
+                  {isLoadingPermissions ? (
+                    <div className="text-center py-4">
+                      <div className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Loading permissions...</div>
+                    </div>
+                  ) : realPermissions.length > 0 ? (
+                    realPermissions.map((permission) => (
+                      <div
+                        key={permission.id}
+                        className="flex items-center gap-2.5 p-2 rounded-lg border transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <Package className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm truncate" style={{ color: 'var(--text)' }}>
+                              {permission.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            <RiskChip risk="Medium" />
+                          </div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
+                            {permission.description || 'No description'}
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="text-sm" style={{ color: 'var(--muted-foreground)' }}>No permissions assigned</div>
                     </div>
-                  ))}
+                  )}
                   <button
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 text-sm rounded-md transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 mt-1"
                     style={{ color: 'var(--primary)' }}

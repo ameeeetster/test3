@@ -1,2 +1,10 @@
 node_modules/
 .env
+
+.env.local
+*.tar.gz
+*.zip
+*.exe
+supabase/.temp/
+supabase/.branches/
+*.bak

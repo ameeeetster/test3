@@ -17,6 +17,7 @@ import { Switch } from '../components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { toast } from 'sonner';
+import { InviteUserDialog } from '../components/InviteUserDialog';
 
 // Mock data with enhanced fields
 const identitiesData: Identity[] = [
@@ -147,6 +148,7 @@ export function EnhancedIdentitiesPage() {
   
   // User creation dialog state
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [userFormData, setUserFormData] = useState({
     // Personal Information
@@ -414,19 +416,19 @@ export function EnhancedIdentitiesPage() {
             style={{ backgroundColor: 'var(--primary)', color: 'white' }}
             onClick={() => {
               // Log the action for audit trail
-              console.log('Add User button clicked', {
+              console.log('Invite User button clicked', {
                 timestamp: new Date().toISOString(),
-                action: 'open_create_user_dialog',
+                action: 'open_invite_user_dialog',
                 user: 'current_user', // In real implementation, get from context
-                correlationId: `add-user-${Date.now()}`
+                correlationId: `invite-user-${Date.now()}`
               });
               
-              // Open the user creation dialog
-              setShowCreateUserDialog(true);
+              // Open the invite user dialog
+              setShowInviteDialog(true);
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add User
+            Invite User
           </Button>
         </div>
 
@@ -984,6 +986,12 @@ export function EnhancedIdentitiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invite User Dialog */}
+      <InviteUserDialog 
+        open={showInviteDialog} 
+        onOpenChange={setShowInviteDialog} 
+      />
 
     </div>
   );

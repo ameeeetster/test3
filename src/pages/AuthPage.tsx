@@ -188,7 +188,7 @@ export default function AuthPage() {
             </Button>
 
             <div style={{ fontSize: 14, textAlign: 'center', color: '#64748b' }}>
-              Don't have an account yet? <a href="#" style={{ color: '#4f46e5', fontWeight: 600, textDecoration: 'none' }}>Sign Up</a>
+              Don't have an account yet? <a href="/register" style={{ color: '#4f46e5', fontWeight: 600, textDecoration: 'none' }}>Sign Up</a>
             </div>
 
             <div style={{ fontSize: 12, textAlign: 'center', color: '#94a3b8' }}>

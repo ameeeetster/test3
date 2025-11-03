@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../components/ui/sheet';
 import { AIPanel } from '../components/AIPanel';
+import { InviteUserDialog } from '../components/InviteUserDialog';
 import {
   Table,
   TableBody,
@@ -112,6 +113,7 @@ export function IdentitiesPage() {
   const location = useLocation();
   const [selectedUser, setSelectedUser] = useState<typeof identities[0] | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   // Helper function to normalize name to URL-friendly format
   const normalizeNameToId = (name: string) => {
@@ -197,9 +199,12 @@ export function IdentitiesPage() {
           }}>
             Identities
           </h1>
-          <Button style={{ backgroundColor: 'var(--primary)' }}>
+          <Button 
+            style={{ backgroundColor: 'var(--primary)' }}
+            onClick={() => setShowInviteDialog(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
-            Add User
+            Invite User
           </Button>
         </div>
 
@@ -509,6 +514,12 @@ export function IdentitiesPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Invite User Dialog */}
+      <InviteUserDialog 
+        open={showInviteDialog} 
+        onOpenChange={setShowInviteDialog} 
+      />
     </div>
   );
 }
