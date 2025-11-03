@@ -11,6 +11,7 @@ import { FilterChip } from '../components/FilterChip';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../components/ui/sheet';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
+import { useApprovals } from '../contexts/ApprovalsContext';
 
 // Lazy load the heavy drawer component
 const EnhancedApprovalDrawer = lazy(() => 
@@ -54,160 +55,35 @@ interface ApprovalRequest {
 const mockRequests: ApprovalRequest[] = [
   {
     id: 'REQ-2847',
-    requester: {
-      name: 'Alex Thompson',
-      email: 'alex.thompson@company.com',
-      department: 'Engineering'
-    },
-    item: {
-      name: 'AWS Production',
-      type: 'Application',
-      icon: '☁️',
-      scope: 'Admin'
-    },
+    requester: { name: 'Alex Johnson', email: 'alex.johnson@example.com', department: 'Finance' },
+    item: { name: 'Oracle ERP • AP Processor', type: 'Application' },
     status: 'Pending',
     risk: 'High',
     age: '2d',
-    slaRemaining: '2d left',
-    submittedAt: '2 days ago',
-    businessJustification: 'Need access to production AWS environment to debug critical infrastructure issues affecting customer deployments. This is blocking P0 incidents.',
-    duration: 'Permanent',
+    slaRemaining: '1d',
+    submittedAt: '2024-10-01',
+    businessJustification: 'Urgent processing for quarter-end close activities and invoice backlog.',
+    duration: '7d',
     sodConflicts: 2,
-    peerCoverage: 85,
-    lastUsed: 'Never',
-    usageData: [5, 8, 12, 15, 11, 9, 14, 18, 22, 19, 16, 20, 25, 23, 21, 24, 28, 26, 24, 27, 30, 28, 25, 29, 32],
+    peerCoverage: 30,
+    lastUsed: '2024-09-28',
+    usageData: [40, 35, 50, 45, 60, 55, 70],
     impactItems: [
-      { type: 'role', name: 'AWS Administrator', scope: 'Full Access' },
-      { type: 'entitlement', name: 'EC2 Management', scope: 'Create, Delete' },
-      { type: 'entitlement', name: 'RDS Admin', scope: 'Full Control' }
+      { type: 'role', name: 'AP Processor' },
+      { type: 'entitlement', name: 'Supplier Payments' },
     ]
   },
-  {
-    id: 'REQ-2846',
-    requester: {
-      name: 'Maria Garcia',
-      email: 'maria.garcia@company.com',
-      department: 'Finance'
-    },
-    item: {
-      name: 'Financial Approver',
-      type: 'Role',
-      icon: '💰',
-      scope: 'Write'
-    },
-    status: 'Pending',
-    risk: 'Medium',
-    age: '1d',
-    slaRemaining: '3d left',
-    submittedAt: '1 day ago',
-    businessJustification: 'Temporary coverage for Jane Doe who is on medical leave. Need to approve invoices and purchase orders for the department.',
-    duration: '14 days',
-    sodConflicts: 0,
-    peerCoverage: 92,
-    lastUsed: '3 days ago',
-    usageData: [12, 15, 14, 13, 16, 18, 17, 15, 14, 16, 19, 20, 18, 17, 19, 21, 20, 19, 18, 20, 22],
-    impactItems: [
-      { type: 'role', name: 'Financial Approver', scope: 'Write' }
-    ]
-  },
-  {
-    id: 'REQ-2845',
-    requester: {
-      name: 'James Wilson',
-      email: 'james.wilson@company.com',
-      department: 'Sales'
-    },
-    item: {
-      name: 'Salesforce Admin',
-      type: 'Application',
-      icon: '⚡',
-      scope: 'Admin'
-    },
-    status: 'Pending',
-    risk: 'Critical',
-    age: '4h',
-    slaRemaining: '1d 20h left',
-    submittedAt: '4 hours ago',
-    businessJustification: 'Promoted to Sales Operations Manager. Require admin access to manage territories, custom fields, and automation workflows.',
-    duration: 'Permanent',
-    sodConflicts: 3,
-    peerCoverage: 78,
-    lastUsed: 'N/A',
-    usageData: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    impactItems: [
-      { type: 'application', name: 'Salesforce', scope: 'Admin' },
-      { type: 'entitlement', name: 'Custom Objects', scope: 'Manage' },
-      { type: 'entitlement', name: 'Territory Management', scope: 'Full' }
-    ]
-  },
-  {
-    id: 'REQ-2844',
-    requester: {
-      name: 'Sarah Chen',
-      email: 'sarah.chen@company.com',
-      department: 'HR'
-    },
-    item: {
-      name: 'Employee Records',
-      type: 'Entitlement',
-      icon: '👥',
-      scope: 'Read'
-    },
-    status: 'Pending',
-    risk: 'Low',
-    age: '6h',
-    slaRemaining: '1d 18h left',
-    submittedAt: '6 hours ago',
-    businessJustification: 'Working on quarterly headcount report and compensation analysis. Need read access to employee database for reporting purposes.',
-    duration: '7 days',
-    sodConflicts: 0,
-    peerCoverage: 95,
-    lastUsed: '1 month ago',
-    usageData: [8, 10, 9, 11, 10, 12, 11, 10, 9, 11, 13, 12, 11, 10, 12, 14, 13, 12, 11, 13],
-    impactItems: [
-      { type: 'entitlement', name: 'Employee Records', scope: 'Read' }
-    ]
-  },
-  {
-    id: 'REQ-2843',
-    requester: {
-      name: 'David Kim',
-      email: 'david.kim@company.com',
-      department: 'Security'
-    },
-    item: {
-      name: 'Security Auditor',
-      type: 'Role',
-      icon: '🛡️',
-      scope: 'Read'
-    },
-    status: 'Pending',
-    risk: 'Medium',
-    age: '12h',
-    slaRemaining: '1d 12h left',
-    submittedAt: '12 hours ago',
-    businessJustification: 'Conducting annual security audit. Need read-only access to review security controls, access logs, and compliance configurations.',
-    duration: '30 days',
-    sodConflicts: 1,
-    peerCoverage: 88,
-    lastUsed: '6 months ago',
-    usageData: [3, 4, 5, 4, 3, 5, 6, 5, 4, 6, 7, 6, 5, 6, 8, 7, 6, 7, 9, 8],
-    impactItems: [
-      { type: 'role', name: 'Security Auditor', scope: 'Read' },
-      { type: 'entitlement', name: 'Audit Logs', scope: 'View' }
-    ]
-  }
 ];
 
 const tabs = [
-  { value: 'all', label: 'All', count: 12 },
-  { value: 'pending', label: 'Pending', count: 5 },
-  { value: 'delegated', label: 'Delegated', count: 2 },
-  { value: 'completed', label: 'Completed', count: 5 },
+  { value: 'pending', label: 'Pending', count: 0 },
+  { value: 'approved', label: 'Approved', count: 0 },
+  { value: 'rejected', label: 'Rejected', count: 0 },
   { value: 'high-risk', label: 'High Risk', count: 3 }
 ];
 
 export function ApprovalsPage() {
+  const { requests: dynamicRequests } = useApprovals();
   const [selectedTab, setSelectedTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
@@ -221,10 +97,14 @@ export function ApprovalsPage() {
   const [riskFilters, setRiskFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
 
+  const allRequests: ApprovalRequest[] = [...dynamicRequests as any, ...mockRequests];
+  
   // Filter requests based on tab, search, and filters
-  const filteredRequests = mockRequests.filter(req => {
+  const filteredRequests = allRequests.filter(req => {
     // Tab filters
     if (selectedTab === 'pending' && req.status !== 'Pending') return false;
+    if (selectedTab === 'approved' && req.status !== 'Approved') return false;
+    if (selectedTab === 'rejected' && req.status !== 'Rejected') return false;
     if (selectedTab === 'high-risk' && !['High', 'Critical'].includes(req.risk)) return false;
     
     // Status filters
@@ -254,13 +134,11 @@ export function ApprovalsPage() {
   };
 
   const handleSelectRequest = (id: string, checked: boolean) => {
-    const newSelected = new Set(selectedRequests);
-    if (checked) {
-      newSelected.add(id);
-    } else {
-      newSelected.delete(id);
-    }
-    setSelectedRequests(newSelected);
+    setSelectedRequests(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
   };
 
   const handleRowClick = (request: ApprovalRequest) => {
@@ -812,7 +690,7 @@ export function ApprovalsPage() {
                       padding: '2px 6px',
                       borderRadius: '4px'
                     }}>
-                      {mockRequests.filter(req => req.status === status).length}
+                      {allRequests.filter(req => req.status === status).length}
                     </span>
                   </div>
                 ))}
@@ -861,7 +739,7 @@ export function ApprovalsPage() {
                       padding: '2px 6px',
                       borderRadius: '4px'
                     }}>
-                      {mockRequests.filter(req => req.risk === risk).length}
+                      {allRequests.filter(req => req.risk === risk).length}
                     </span>
                   </div>
                 ))}
@@ -906,7 +784,7 @@ export function ApprovalsPage() {
                       padding: '2px 6px',
                       borderRadius: '4px'
                     }}>
-                      {mockRequests.filter(req => req.requester.department === dept).length}
+                      {allRequests.filter(req => req.requester.department === dept).length}
                     </span>
                   </div>
                 ))}

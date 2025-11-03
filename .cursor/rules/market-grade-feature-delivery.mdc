@@ -1,0 +1,30 @@
+---
+description: When developing any new functionality or new page or route
+alwaysApply: false
+---
+# Rule · Market-Grade IAM Feature Delivery with Supabase Integration
+
+## Scope
+New or updated routes/pages (`src/pages/**`), shared UI components, services (`src/services/**`), Supabase schema/RLS/functions (`supabase/**`), and policy packs.
+
+## Design Standards
+- Domain model: enforce IAM invariants — one active primary Identity per Person; no orphan Accounts; each Entitlement has owner and classification; SoD coverage with mitigating controls; audit on every mutation.
+- Security: RLS-by-default; least-privilege RPCs; rigorous input validation; secrets via env/vault; PII redaction in logs.
+- UX: consistent design system, accessible (WCAG 2.1 AA), responsive; clear empty/edge/error states; optimistic UI with safe undo.
+- AI readiness: abstract AI calls in `aiService` behind feature flags; provider-agnostic; safe prompt/response logging.
+
+## Data & Supabase
+- Define/adjust tables, indexes, RLS policies, and RPCs as needed; write reversible migrations in `supabase/migrations` (up/down, idempotent, safe).
+- Contract tests for RLS/RPC correctness; seed fixtures for Joiner/Mover/Leaver, SoD edge cases; align generated/handwritten types in `src/types/**`.
+
+## Delivery Flow
+- RFC-lite per feature (goal, schema/API, UX, risks, rollout/rollback).
+- Feature flag + progressive rollout; kill switch available.
+- Full test suite must pass: unit, integration, E2E (JML, requests, invites, role creation), policy/SoD, accessibility, performance.
+- Observability: structured logs + `AuditEvent` on mutations with correlation IDs; basic alerts added/updated.
+- Documentation: update route usage, API contracts, migrations, flags, and operator notes.
+
+## Definition of Done
+- End-to-end integration with Supabase: reads/writes under RLS, RPCs least-privilege, `AuditEvent` emitted.
+- UI meets accessibility/performance budgets; edge/empty/error states implemented.
+- Change is reversible (migrations down, flag off); monitors/alerts in place; evidence bundle attached.

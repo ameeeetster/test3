@@ -1,0 +1,33 @@
+---
+description: When doing testing or fixing any issue/error
+alwaysApply: false
+---
+# Rule · Autonomous Error Resolution and Verification (Project-Scoped)
+
+## Scope
+Applies to any new or changed functionality across `src/**`, Supabase Functions (`supabase/functions/**`), migrations (`supabase/migrations/**`), UI routes/pages, services, policies, and data jobs.
+
+## Mandates
+- Own to green: diagnose, fix, and verify end-to-end; do not return partially fixed work.
+- Root cause: remediate underlying cause (not just symptoms) and add guards to prevent recurrence (types, schema constraints, RLS/policies, input validation).
+- Safety: prefer smallest viable change; gate risky paths behind feature flags; dry-run preview for destructive actions where supported; ensure idempotency and retry safety.
+
+## Required Tests (run and attach evidence)
+- Unit/Contract: components, hooks, services (e.g., `identityService`, `rbacService`, `isrService`); transforms, mapping/correlation, naming rules.
+- Integration: Supabase queries/RLS/policies, RPCs; migrations up/down reversible and idempotent; seed fixtures for edge cases.
+- E2E (IGA flows):
+  - Joiner: birthright roles, account creation, group/license assignment.
+  - Mover: entitlement deltas, SoD re-evaluation, risk updates.
+  - Leaver: disable/revoke across targets, license removal.
+- Policy/SoD: positive/negative coverage, mitigating controls, time-bound exceptions validation.
+- UX/Accessibility: WCAG 2.1 AA checks, keyboard navigation, responsive layouts.
+- Performance: no new hot paths; route load within budget; background jobs within latency SLOs.
+
+## Observability & Audit
+- Emit structured logs with correlation IDs; record immutable `AuditEvent` for every mutation (who/what/when/why/correlationId).
+- Add/maintain alerts for error-rate spikes, failed RPCs, dead-letter queues, job lag.
+
+## Definition of Done
+- All tests green (unit/integration/E2E/policy/UX/perf); lints/types clean.
+- No secrets added; migrations reversible; feature flags documented.
+- Evidence bundle prepared (key diffs, logs, screenshots of UI flows where relevant).

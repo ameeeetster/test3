@@ -32,12 +32,14 @@ import { ISRDemoPage } from './pages/ISRDemoPage';
 import { SupabaseConnectionTest } from './components/SupabaseConnectionTest';
 import AcceptInvitePage from './pages/AcceptInvitePage';
 import TestIdentitiesPage from './pages/TestIdentitiesPage';
+import { ApprovalsProvider } from './contexts/ApprovalsContext';
 
 export default function App() {
   return (
     <ErrorBoundary>
       <UserProvider>
         <AuthProvider>
+        <ApprovalsProvider>
         <BrowserRouter>
           <ErrorBoundary>
             <Routes>
@@ -89,6 +91,7 @@ export default function App() {
           </ErrorBoundary>
           <Toaster />
         </BrowserRouter>
+        </ApprovalsProvider>
         </AuthProvider>
       </UserProvider>
     </ErrorBoundary>

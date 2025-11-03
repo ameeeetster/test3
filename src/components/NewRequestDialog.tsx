@@ -8,6 +8,7 @@ import { FormTextarea } from './FormTextarea';
 import { Calendar, AlertCircle, CheckCircle, Shield, ExternalLink, Loader2, Database, Cloud, Briefcase, DollarSign, Users } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'sonner';
+import { useApprovals } from '../contexts/ApprovalsContext';
 
 interface NewRequestDialogProps {
   open: boolean;
@@ -114,6 +115,7 @@ const accessLevelsByApp: Record<string, Array<{
 
 export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) {
   const { user } = useUser();
+  const { submitAccessRequest } = useApprovals();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form state
@@ -199,6 +201,23 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Push to approvals context
+    const requesterName = isAdmin ? (users.find(u => u.value === requestingFor)?.label || 'Selected User') : (user?.name || 'Current User');
+    const requesterEmail = isAdmin ? (users.find(u => u.value === requestingFor)?.sublabel.split('•')[1].trim() || 'user@example.com') : (user?.email || 'user@example.com');
+    const requesterDept = isAdmin ? (users.find(u => u.value === requestingFor)?.sublabel.split('•')[0].split('•')[0].split('•')[0].split('•')[0] || 'General').split('•')[0].split('•')[0].trim().split(' ')[0] : (user?.department || 'General');
+    const appLabel = applications.find(a => a.value === application)?.label || application;
+    const levelLabel = selectedAccessLevel?.label || accessLevel;
+    const riskMap: Record<string, 'Low' | 'Medium' | 'High'> = { low: 'Low', medium: 'Medium', high: 'High' };
+
+    submitAccessRequest({
+      requester: { name: requesterName, email: requesterEmail, department: requesterDept },
+      item: { name: `${appLabel} • ${levelLabel}`, type: 'Application' },
+      risk: riskMap[selectedAccessLevel?.risk || 'low'],
+      businessJustification: justification.trim(),
+      duration: duration || undefined,
+      sodConflicts: selectedAccessLevel?.sodConflict ? 1 : 0,
+    });
     
     setIsSubmitting(false);
     
