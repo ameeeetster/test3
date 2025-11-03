@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { RequestsService } from '../services/requestsService';
 
 export type ApprovalRisk = 'Low' | 'Medium' | 'High' | 'Critical';
 export type ApprovalStatus = 'Pending' | 'Approved' | 'Rejected';
@@ -36,7 +37,8 @@ export interface ApprovalRequest {
 
 interface ApprovalsContextValue {
   requests: ApprovalRequest[];
-  submitAccessRequest: (req: Omit<ApprovalRequest, 'id' | 'status' | 'age' | 'slaRemaining' | 'submittedAt'> & { status?: ApprovalStatus }) => ApprovalRequest;
+  submitAccessRequest: (req: Omit<ApprovalRequest, 'id' | 'status' | 'age' | 'slaRemaining' | 'submittedAt'> & { status?: ApprovalStatus }) => Promise<ApprovalRequest>;
+  reload: () => Promise<void>;
   clearAll: () => void;
 }
 
@@ -45,18 +47,45 @@ const ApprovalsContext = createContext<ApprovalsContextValue | undefined>(undefi
 export function ApprovalsProvider({ children }: { children: React.ReactNode }) {
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
 
-  const submitAccessRequest: ApprovalsContextValue['submitAccessRequest'] = useCallback((req) => {
-    const now = new Date();
-    const id = `REQ-${now.getFullYear()}-${now.getTime().toString().slice(-4)}`;
-    const newReq: ApprovalRequest = {
-      id,
+  const reload = useCallback(async () => {
+    const rows = await RequestsService.listPending();
+    const mapped: ApprovalRequest[] = rows.map(r => ({
+      id: r.id,
+      requester: { name: 'Requester', email: 'user@example.com', department: 'General' },
+      item: { name: r.resource_name, type: 'Application' },
+      status: 'Pending',
+      risk: 'Low',
+      age: '0d',
+      slaRemaining: '3d',
+      submittedAt: r.submitted_at,
+      businessJustification: r.business_justification || '',
+      sodConflicts: 0,
+    }));
+    setRequests(mapped);
+  }, []);
+
+  useEffect(() => {
+    reload().catch(() => {});
+  }, [reload]);
+
+  const submitAccessRequest: ApprovalsContextValue['submitAccessRequest'] = useCallback(async (req) => {
+    const created = await RequestsService.create({
+      resource_type: req.item.type,
+      resource_name: req.item.name,
+      business_justification: req.businessJustification,
+      risk_level: req.risk,
+      sod_conflicts_count: req.sodConflicts ?? 0,
+      duration_days: req.duration ? 0 : null,
+    });
+    const mapped: ApprovalRequest = {
+      id: created.id,
       requester: req.requester,
       item: req.item,
-      status: req.status ?? 'Pending',
+      status: 'Pending',
       risk: req.risk,
       age: '0d',
       slaRemaining: '3d',
-      submittedAt: now.toISOString(),
+      submittedAt: created.submitted_at,
       businessJustification: req.businessJustification,
       duration: req.duration,
       sodConflicts: req.sodConflicts ?? 0,
@@ -65,13 +94,13 @@ export function ApprovalsProvider({ children }: { children: React.ReactNode }) {
       usageData: req.usageData,
       impactItems: req.impactItems,
     };
-    setRequests(prev => [newReq, ...prev]);
-    return newReq;
+    setRequests(prev => [mapped, ...prev]);
+    return mapped;
   }, []);
 
   const clearAll = useCallback(() => setRequests([]), []);
 
-  const value = useMemo(() => ({ requests, submitAccessRequest, clearAll }), [requests, submitAccessRequest, clearAll]);
+  const value = useMemo(() => ({ requests, submitAccessRequest, reload, clearAll }), [requests, submitAccessRequest, reload, clearAll]);
 
   return (
     <ApprovalsContext.Provider value={value}>{children}</ApprovalsContext.Provider>

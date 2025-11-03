@@ -2,3 +2,14 @@
   VITE v6.3.5  ready in 429 ms
 
   ➜  Local:   http://127.0.0.1:5173/
+14:43:56 [vite] (client) hmr update /src/App.tsx
+14:44:48 [vite] (client) hmr update /src/components/NewRequestDialog.tsx
+14:45:06 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+14:48:18 [vite] (client) page reload build/index.html
+14:48:22 [vite] (client) page reload build/index.html
+14:48:47 [vite] (client) hmr update /src/contexts/ApprovalsContext.tsx
+14:48:47 [vite] (client) hmr update /src/components/NewRequestDialog.tsx
+14:48:47 [vite] (client) hmr update /src/App.tsx
+14:48:47 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+14:48:47 [vite] (client) hmr invalidate /src/contexts/ApprovalsContext.tsx Could not Fast Refresh ("useApprovals" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc#consistent-components-exports
+14:48:47 [vite] (client) hmr update /src/App.tsx, /src/components/NewRequestDialog.tsx, /src/pages/ApprovalsPage.tsx

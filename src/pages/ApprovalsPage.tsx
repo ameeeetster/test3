@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { Search, Filter, Download, CheckSquare, XSquare, Eye, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -51,39 +51,8 @@ interface ApprovalRequest {
   }>;
 }
 
-// Mock data
-const mockRequests: ApprovalRequest[] = [
-  {
-    id: 'REQ-2847',
-    requester: { name: 'Alex Johnson', email: 'alex.johnson@example.com', department: 'Finance' },
-    item: { name: 'Oracle ERP • AP Processor', type: 'Application' },
-    status: 'Pending',
-    risk: 'High',
-    age: '2d',
-    slaRemaining: '1d',
-    submittedAt: '2024-10-01',
-    businessJustification: 'Urgent processing for quarter-end close activities and invoice backlog.',
-    duration: '7d',
-    sodConflicts: 2,
-    peerCoverage: 30,
-    lastUsed: '2024-09-28',
-    usageData: [40, 35, 50, 45, 60, 55, 70],
-    impactItems: [
-      { type: 'role', name: 'AP Processor' },
-      { type: 'entitlement', name: 'Supplier Payments' },
-    ]
-  },
-];
-
-const tabs = [
-  { value: 'pending', label: 'Pending', count: 0 },
-  { value: 'approved', label: 'Approved', count: 0 },
-  { value: 'rejected', label: 'Rejected', count: 0 },
-  { value: 'high-risk', label: 'High Risk', count: 3 }
-];
-
 export function ApprovalsPage() {
-  const { requests: dynamicRequests } = useApprovals();
+  const { requests: allRequests } = useApprovals();
   const [selectedTab, setSelectedTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
@@ -97,7 +66,12 @@ export function ApprovalsPage() {
   const [riskFilters, setRiskFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
 
-  const allRequests: ApprovalRequest[] = [...dynamicRequests as any, ...mockRequests];
+  const tabs = useMemo(() => ([
+    { value: 'pending', label: 'Pending', count: allRequests.filter(r => r.status === 'Pending').length },
+    { value: 'approved', label: 'Approved', count: allRequests.filter(r => r.status === 'Approved').length },
+    { value: 'rejected', label: 'Rejected', count: allRequests.filter(r => r.status === 'Rejected').length },
+    { value: 'high-risk', label: 'High Risk', count: allRequests.filter(r => ['High','Critical'].includes(r.risk)).length }
+  ]), [allRequests]);
   
   // Filter requests based on tab, search, and filters
   const filteredRequests = allRequests.filter(req => {
