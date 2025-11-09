@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserCog, Key, Lock, XCircle, UserX, Plus, Search, Download } from 'lucide-react';
+import { X, UserCog, Key, Lock, XCircle, UserX, Plus, Search, Download, Phone, Mail, MapPin, Calendar, Building, Shield, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from './ui/sheet';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
@@ -335,13 +335,165 @@ export function IdentityDetailDrawer({ identity, open, onClose }: IdentityDetail
                   <SpecGrid
                     items={[
                       { label: 'Department', value: identity.department },
-                      { label: 'Title', value: identity.title || 'Not specified' },
-                      { label: 'Company', value: identity.company || 'Acme Corp' },
-                      { label: 'Location', value: identity.location || 'San Francisco, CA' },
-                      { label: 'Manager', value: identity.manager },
+                      { label: 'Job Title', value: (identity as any).jobTitle || identity.title || 'Not specified' },
+                      { label: 'Division', value: (identity as any).division || 'Not specified' },
+                      { label: 'Business Unit', value: (identity as any).businessUnit || 'Not specified' },
+                      { label: 'Location', value: (identity as any).location || identity.location || 'Not specified' },
+                      { label: 'Cost Center', value: (identity as any).costCenter || 'Not specified' },
+                      { label: 'Manager', value: identity.manager || 'Not specified' },
+                      { label: 'Employee ID', value: (identity as any).employeeId || identity.id },
+                      { label: 'Employment Type', value: (identity as any).employmentType || 'Not specified' },
                       { label: 'Lifecycle State', value: identity.lifecycleState || 'Active Employee' },
-                      { label: 'Join Date', value: identity.joinDate || '2023-01-15' },
-                      { label: 'Employee ID', value: identity.id },
+                      { label: 'Start Date', value: (identity as any).startDate || identity.joinDate || 'Not specified' },
+                      { label: 'End Date', value: (identity as any).endDate || 'N/A' },
+                    ]}
+                  />
+                </div>
+
+                {/* Contact Information Section */}
+                <div 
+                  className="rounded-lg border p-5"
+                  style={{
+                    borderColor: 'var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    boxShadow: 'var(--shadow-xs)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Mail className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                    <h3 style={{
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text)'
+                    }}>
+                      Contact Information
+                    </h3>
+                  </div>
+                  <SpecGrid
+                    items={[
+                      { label: 'Email', value: identity.email },
+                      { label: 'Phone', value: (identity as any).phone || 'Not specified' },
+                      { label: 'Mobile Phone', value: (identity as any).mobilePhone || 'Not specified' },
+                      { label: 'Office Address', value: (identity as any).officeAddress || 'Not specified' },
+                      { label: 'Timezone', value: (identity as any).timezone || 'Not specified' },
+                      { label: 'Preferred Language', value: (identity as any).preferredLanguage || 'English' },
+                    ]}
+                  />
+                </div>
+
+                {/* Account Security Section */}
+                <div 
+                  className="rounded-lg border p-5"
+                  style={{
+                    borderColor: 'var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    boxShadow: 'var(--shadow-xs)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                    <h3 style={{
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text)'
+                    }}>
+                      Account Security
+                    </h3>
+                  </div>
+                  <SpecGrid
+                    items={[
+                      { label: 'Username', value: (identity as any).username || 'Not set' },
+                      { label: 'MFA Enabled', value: (identity as any).mfaEnabled ? 'Yes' : 'No' },
+                      { label: 'Account Created', value: (identity as any).accountCreated 
+                        ? new Date((identity as any).accountCreated).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })
+                        : 'Not available' },
+                      { label: 'Account Age', value: (identity as any).accountAge 
+                        ? `${(identity as any).accountAge} days`
+                        : 'Not available' },
+                      { label: 'Password Last Changed', value: (identity as any).passwordLastChanged 
+                        ? new Date((identity as any).passwordLastChanged).toLocaleDateString()
+                        : 'Never' },
+                      { label: 'Require Password Change', value: (identity as any).requiresPasswordChange ? 'Yes' : 'No' },
+                      { label: 'Account Expiration', value: (identity as any).accountExpiration 
+                        ? new Date((identity as any).accountExpiration).toLocaleDateString()
+                        : 'Never' },
+                      { label: 'Failed Login Attempts', value: String((identity as any).failedLoginAttempts || 0) },
+                      { label: 'Account Locked', value: (identity as any).accountLocked ? 'Yes' : 'No' },
+                      { label: 'Account Locked Until', value: (identity as any).accountLockedUntil 
+                        ? new Date((identity as any).accountLockedUntil).toLocaleString()
+                        : 'N/A' },
+                    ]}
+                  />
+                </div>
+
+                {/* Employment Details Section */}
+                <div 
+                  className="rounded-lg border p-5"
+                  style={{
+                    borderColor: 'var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    boxShadow: 'var(--shadow-xs)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                    <h3 style={{
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text)'
+                    }}>
+                      Employment Details
+                    </h3>
+                  </div>
+                  <SpecGrid
+                    items={[
+                      { label: 'Employment Type', value: (identity as any).employmentType || 'Not specified' },
+                      { label: 'Start Date', value: (identity as any).startDate 
+                        ? new Date((identity as any).startDate).toLocaleDateString()
+                        : 'Not specified' },
+                      { label: 'End Date', value: (identity as any).endDate 
+                        ? new Date((identity as any).endDate).toLocaleDateString()
+                        : 'N/A' },
+                      { label: 'Onboarding Status', value: (identity as any).onboardingStatus || 'Not specified' },
+                      { label: 'Offboarding Status', value: (identity as any).offboardingStatus || 'N/A' },
+                    ]}
+                  />
+                </div>
+
+                {/* Compliance & Governance Section */}
+                <div 
+                  className="rounded-lg border p-5"
+                  style={{
+                    borderColor: 'var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    boxShadow: 'var(--shadow-xs)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="w-4 h-4" style={{ color: 'var(--muted-foreground)' }} />
+                    <h3 style={{
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-weight-semibold)',
+                      color: 'var(--text)'
+                    }}>
+                      Compliance & Governance
+                    </h3>
+                  </div>
+                  <SpecGrid
+                    items={[
+                      { label: 'Data Classification', value: (identity as any).dataClassification || 'Not specified' },
+                      { label: 'Compliance Certifications', value: (identity as any).complianceCertifications?.length 
+                        ? (identity as any).complianceCertifications.join(', ')
+                        : 'None' },
+                      { label: 'Privacy Consent Status', value: (identity as any).privacyConsentStatus || 'Not specified' },
+                      { label: 'Audit Trail Enabled', value: (identity as any).auditTrailEnabled !== false ? 'Yes' : 'No' },
+                      { label: 'Risk Score', value: (identity as any).riskScore !== undefined 
+                        ? String((identity as any).riskScore)
+                        : 'Not calculated' },
                     ]}
                   />
                 </div>

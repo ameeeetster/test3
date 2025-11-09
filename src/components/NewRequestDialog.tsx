@@ -203,9 +203,10 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Push to approvals context
-    const requesterName = isAdmin ? (users.find(u => u.value === requestingFor)?.label || 'Selected User') : (user?.name || 'Current User');
-    const requesterEmail = isAdmin ? (users.find(u => u.value === requestingFor)?.sublabel.split('•')[1].trim() || 'user@example.com') : (user?.email || 'user@example.com');
-    const requesterDept = isAdmin ? (users.find(u => u.value === requestingFor)?.sublabel.split('•')[0].split('•')[0].split('•')[0].split('•')[0] || 'General').split('•')[0].split('•')[0].trim().split(' ')[0] : (user?.department || 'General');
+    const selectedUser = users.find(u => u.value === requestingFor);
+    const requesterName = isAdmin ? (selectedUser?.label || 'Selected User') : (user?.name || 'Current User');
+    const requesterEmail = isAdmin ? ((selectedUser?.sublabel.split('•')[1] || '').trim() || 'user@example.com') : (user?.email || 'user@example.com');
+    const requesterDept = isAdmin ? ((selectedUser?.sublabel.split('•')[0] || '').trim() || 'General') : (user?.department || 'General');
     const appLabel = applications.find(a => a.value === application)?.label || application;
     const levelLabel = selectedAccessLevel?.label || accessLevel;
     const riskMap: Record<string, 'Low' | 'Medium' | 'High'> = { low: 'Low', medium: 'Medium', high: 'High' };

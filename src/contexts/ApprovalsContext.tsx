@@ -44,6 +44,16 @@ interface ApprovalsContextValue {
 
 const ApprovalsContext = createContext<ApprovalsContextValue | undefined>(undefined);
 
+function computeDurationDaysFromDate(endDateString: string | undefined): number | null {
+  if (!endDateString) return null;
+  const end = new Date(endDateString);
+  if (isNaN(end.getTime())) return null;
+  const start = new Date();
+  const ms = end.getTime() - start.getTime();
+  if (ms <= 0) return 0; // same-day or past date treated as 0 days
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
 export function ApprovalsProvider({ children }: { children: React.ReactNode }) {
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
 
@@ -69,13 +79,14 @@ export function ApprovalsProvider({ children }: { children: React.ReactNode }) {
   }, [reload]);
 
   const submitAccessRequest: ApprovalsContextValue['submitAccessRequest'] = useCallback(async (req) => {
+    const durationDays = computeDurationDaysFromDate(req.duration);
     const created = await RequestsService.create({
       resource_type: req.item.type,
       resource_name: req.item.name,
       business_justification: req.businessJustification,
       risk_level: req.risk,
       sod_conflicts_count: req.sodConflicts ?? 0,
-      duration_days: req.duration ? 0 : null,
+      duration_days: durationDays,
     });
     const mapped: ApprovalRequest = {
       id: created.id,

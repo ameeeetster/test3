@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Filter, Plus, Download, Lock, XCircle, FileCheck, X, User, Mail, Phone, Building, Calendar, Shield, Key } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Separator } from '../components/ui/separator';
 import { toast } from 'sonner';
 import { InviteUserDialog } from '../components/InviteUserDialog';
+import { IdentityService, type CreateIdentityInput } from '../services/identityService';
 
 // Mock data with enhanced fields
 const identitiesData: Identity[] = [
@@ -145,9 +146,12 @@ export function EnhancedIdentitiesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [identities, setIdentities] = useState<Identity[]>(identitiesData);
   
   // User creation dialog state
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  // Available managers (all active users from database)
+  const [availableManagers, setAvailableManagers] = useState<Identity[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [userFormData, setUserFormData] = useState({
@@ -156,10 +160,21 @@ export function EnhancedIdentitiesPage() {
     lastName: '',
     email: '',
     phone: '',
+    mobilePhone: '',
     // Organizational
     department: '',
+    division: '',
+    businessUnit: '',
     manager: '',
     jobTitle: '',
+    location: '',
+    officeAddress: '',
+    costCenter: '',
+    employeeId: '',
+    // Employment
+    employmentType: '',
+    startDate: '',
+    endDate: '',
     // Access Control
     initialRoles: [] as string[],
     status: 'active',
@@ -169,8 +184,13 @@ export function EnhancedIdentitiesPage() {
     password: '',
     passwordConfirm: '',
     accountExpiration: '',
+    timezone: '',
+    preferredLanguage: '',
     sendWelcomeEmail: true,
     requirePasswordChange: true,
+    // Compliance
+    dataClassification: '',
+    privacyConsentStatus: '',
     // Additional
     notes: ''
   });
@@ -189,58 +209,117 @@ export function EnhancedIdentitiesPage() {
   };
 
   const handleCreateUser = async () => {
+    // Validation
+    if (!userFormData.firstName || !userFormData.lastName) {
+      toast.error("Validation failed", {
+        description: "First name and last name are required.",
+        duration: 5000
+      });
+      return;
+    }
+
+    if (!userFormData.email) {
+      toast.error("Validation failed", {
+        description: "Email is required.",
+        duration: 5000
+      });
+      return;
+    }
+
+    if (!userFormData.password || userFormData.password.length < 8) {
+      toast.error("Validation failed", {
+        description: "Password must be at least 8 characters long.",
+        duration: 5000
+      });
+      return;
+    }
+
+    if (userFormData.password !== userFormData.passwordConfirm) {
+      toast.error("Validation failed", {
+        description: "Passwords do not match.",
+        duration: 5000
+      });
+      return;
+    }
+
     setIsCreatingUser(true);
     
     try {
-      // Log the action for audit trail
-      console.log('User creation initiated', {
+      const fullName = `${userFormData.firstName} ${userFormData.lastName}`.trim();
+      
+      console.log('📝 User creation initiated', {
         timestamp: new Date().toISOString(),
         action: 'create_user',
-        user: 'current_user', // In real implementation, get from context
         correlationId: `create-user-${Date.now()}`,
         userData: {
-          name: `${userFormData.firstName} ${userFormData.lastName}`,
+          name: fullName,
           email: userFormData.email,
           department: userFormData.department,
-          status: userFormData.status,
-          riskLevel: userFormData.riskLevel
         }
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create user via IdentityService
+      const createdIdentity = await IdentityService.create({
+        email: userFormData.email,
+        password: userFormData.password,
+        full_name: fullName,
+        role: 'member',
+        // Personal Information
+        first_name: userFormData.firstName,
+        last_name: userFormData.lastName,
+        phone: userFormData.phone,
+        mobile_phone: userFormData.mobilePhone || undefined,
+        // Organizational Information
+        department: userFormData.department,
+        division: userFormData.division || undefined,
+        business_unit: userFormData.businessUnit || undefined,
+        manager_id: userFormData.manager || undefined,
+        job_title: userFormData.jobTitle,
+        location: userFormData.location || undefined,
+        office_address: userFormData.officeAddress || undefined,
+        cost_center: userFormData.costCenter || undefined,
+        employee_id: userFormData.employeeId || undefined,
+        // Employment
+        employment_type: userFormData.employmentType || undefined,
+        start_date: userFormData.startDate || undefined,
+        end_date: userFormData.endDate || undefined,
+        // Access Control
+        status: userFormData.status,
+        risk_level: userFormData.riskLevel,
+        initial_roles: userFormData.initialRoles,
+        // Account Settings
+        username: userFormData.username,
+        account_expiration: userFormData.accountExpiration || undefined,
+        timezone: userFormData.timezone || undefined,
+        preferred_language: userFormData.preferredLanguage || undefined,
+        require_password_change: userFormData.requirePasswordChange,
+        send_welcome_email: userFormData.sendWelcomeEmail,
+        // Compliance
+        data_classification: userFormData.dataClassification || undefined,
+        privacy_consent_status: userFormData.privacyConsentStatus || undefined,
+        // Additional
+        notes: userFormData.notes,
+      });
+
+      console.log('✅ User created successfully:', createdIdentity);
+
+      // Reload identities from database
+      await reloadIdentities();
 
       // Success feedback
       toast.success("User created successfully!", {
-        description: `${userFormData.firstName} ${userFormData.lastName} has been added to the system.`,
+        description: `${fullName} has been added to the system and will persist in the database.`,
         duration: 5000
       });
 
       // Close dialog and reset form
       setShowCreateUserDialog(false);
-      setUserFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        department: '',
-        manager: '',
-        jobTitle: '',
-        initialRoles: [],
-        status: 'active',
-        riskLevel: 'low',
-        username: '',
-        password: '',
-        passwordConfirm: '',
-        accountExpiration: '',
-        sendWelcomeEmail: true,
-        requirePasswordChange: true,
-        notes: ''
-      });
+      resetForm();
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Error creating user:', error);
       toast.error("Failed to create user", {
-        description: "Please check the form data and try again.",
+        description: error?.message || "Please check the form data and try again.",
         duration: 5000
       });
     } finally {
@@ -248,32 +327,236 @@ export function EnhancedIdentitiesPage() {
     }
   };
 
+      // Reload identities from database
+      const reloadIdentities = useCallback(async () => {
+        setIsLoading(true);
+        try {
+          const dbIdentities = await IdentityService.getIdentities();
+          console.log('📥 Loaded identities from database:', dbIdentities.length);
+          console.log('📥 Database identities:', dbIdentities);
+          
+      // Map database identities to display format
+      // Use database fields first, fallback to defaults
+      const mappedDbIdentities = dbIdentities.map(dbIdentity => {
+        const mockMatch = identitiesData.find(m => m.email === dbIdentity.email);
+        // Capitalize status to match display format
+        const statusCapitalized = dbIdentity.status 
+          ? dbIdentity.status.charAt(0).toUpperCase() + dbIdentity.status.slice(1).toLowerCase()
+          : 'Active';
+        
+        // Capitalize risk level
+        const riskCapitalized = dbIdentity.risk_level
+          ? dbIdentity.risk_level.charAt(0).toUpperCase() + dbIdentity.risk_level.slice(1).toLowerCase()
+          : 'Low';
+        
+        // Calculate account age in days
+        const accountAge = dbIdentity.account_created 
+          ? Math.floor((new Date().getTime() - new Date(dbIdentity.account_created).getTime()) / (1000 * 60 * 60 * 24))
+          : undefined;
+
+        const mapped: Identity = {
+          id: dbIdentity.id,
+          name: dbIdentity.name || dbIdentity.full_name || dbIdentity.email,
+          email: dbIdentity.email,
+          // Use database department if available, otherwise mock or default
+          department: dbIdentity.department || mockMatch?.department || 'Unknown',
+          manager: mockMatch?.manager || '', // TODO: Look up manager by manager_id
+          status: statusCapitalized as 'Active' | 'Inactive' | 'Disabled' | 'Pending',
+          risk: riskCapitalized as 'Critical' | 'High' | 'Medium' | 'Low',
+          roles: mockMatch?.roles || 0,
+          lastLogin: mockMatch?.lastLogin || '',
+          lastLoginDays: mockMatch?.lastLoginDays || 0,
+          issues: mockMatch?.issues || { sodConflicts: 0, anomalies: 0 },
+          // Phase 1: Quick wins
+          jobTitle: dbIdentity.job_title,
+          phone: dbIdentity.phone,
+          username: dbIdentity.username,
+          accountCreated: dbIdentity.account_created,
+          mfaEnabled: dbIdentity.mfa_enabled,
+          accountExpiration: dbIdentity.account_expiration,
+          // Phase 3: Extended attributes
+          employeeId: dbIdentity.employee_id,
+          location: dbIdentity.location,
+          officeAddress: dbIdentity.office_address,
+          costCenter: dbIdentity.cost_center,
+          employmentType: dbIdentity.employment_type,
+          division: dbIdentity.division,
+          businessUnit: dbIdentity.business_unit,
+          startDate: dbIdentity.start_date,
+          endDate: dbIdentity.end_date,
+          mobilePhone: dbIdentity.mobile_phone,
+          timezone: dbIdentity.timezone,
+          preferredLanguage: dbIdentity.preferred_language,
+          passwordLastChanged: dbIdentity.password_last_changed,
+          failedLoginAttempts: dbIdentity.failed_login_attempts,
+          accountLocked: dbIdentity.account_locked,
+          accountLockedUntil: dbIdentity.account_locked_until,
+          dataClassification: dbIdentity.data_classification,
+          complianceCertifications: dbIdentity.compliance_certifications,
+          privacyConsentStatus: dbIdentity.privacy_consent_status,
+          auditTrailEnabled: dbIdentity.audit_trail_enabled,
+          onboardingStatus: dbIdentity.onboarding_status,
+          offboardingStatus: dbIdentity.offboarding_status,
+          riskScore: dbIdentity.risk_score,
+          // Calculated fields
+          accountAge: accountAge,
+          requiresPasswordChange: dbIdentity.require_password_change
+        };
+        
+        console.log('📝 Mapped identity:', mapped);
+        return mapped;
+      });
+      
+      // Get emails of database identities to avoid duplicates
+      const dbEmails = new Set(mappedDbIdentities.map(i => i.email.toLowerCase()));
+      
+      // Add mock identities that aren't in the database
+      const mockIdentitiesToAdd = identitiesData.filter(mock => 
+        !dbEmails.has(mock.email.toLowerCase())
+      );
+      
+      // Combine database identities with non-duplicate mock identities
+      const allIdentities = [...mappedDbIdentities, ...mockIdentitiesToAdd];
+      
+      console.log('✅ Setting identities:', allIdentities.length, `(${mappedDbIdentities.length} from DB, ${mockIdentitiesToAdd.length} from mock)`);
+      setIdentities(allIdentities);
+        } catch (error) {
+          console.error('❌ Error loading identities:', error);
+          // Keep existing identities on error
+        } finally {
+          setIsLoading(false);
+        }
+      }, []);
+
   const resetForm = () => {
     setUserFormData({
+      // Personal Information
       firstName: '',
       lastName: '',
       email: '',
       phone: '',
+      mobilePhone: '',
+      // Organizational
       department: '',
+      division: '',
+      businessUnit: '',
       manager: '',
       jobTitle: '',
+      location: '',
+      officeAddress: '',
+      costCenter: '',
+      employeeId: '',
+      // Employment
+      employmentType: '',
+      startDate: '',
+      endDate: '',
+      // Access Control
       initialRoles: [],
       status: 'active',
       riskLevel: 'low',
+      // Account Settings
       username: '',
       password: '',
       passwordConfirm: '',
       accountExpiration: '',
+      timezone: '',
+      preferredLanguage: '',
       sendWelcomeEmail: true,
       requirePasswordChange: true,
+      // Compliance
+      dataClassification: '',
+      privacyConsentStatus: '',
+      // Additional
       notes: ''
     });
   };
 
+  // Function to generate Employee ID automatically
+  const generateEmployeeId = useCallback(() => {
+    try {
+      // Get all existing employee IDs from identities
+      const existingEmployeeIds = identities
+        .map(id => id.employeeId)
+        .filter(id => id && id.trim() !== '')
+        .map(id => {
+          // Extract numeric part if format is EMP-YYYY-NNNN or EMP-NNNNNN
+          const match = id.match(/EMP-(\d{4})-(\d+)|EMP-(\d+)/);
+          if (match) {
+            return match[2] ? parseInt(match[2], 10) : parseInt(match[3], 10);
+          }
+          // Try to extract any trailing numbers
+          const numMatch = id.match(/(\d+)$/);
+          return numMatch ? parseInt(numMatch[1], 10) : 0;
+        })
+        .filter(num => !isNaN(num) && num > 0);
+
+      // Get the highest number
+      const maxNumber = existingEmployeeIds.length > 0 
+        ? Math.max(...existingEmployeeIds) 
+        : 0;
+
+      // Generate new Employee ID: EMP-YYYY-NNNN format
+      const currentYear = new Date().getFullYear();
+      const nextNumber = maxNumber + 1;
+      const paddedNumber = String(nextNumber).padStart(4, '0');
+      const newEmployeeId = `EMP-${currentYear}-${paddedNumber}`;
+
+      // Update form data with generated Employee ID
+      setUserFormData(prev => ({
+        ...prev,
+        employeeId: newEmployeeId
+      }));
+    } catch (error) {
+      console.error('Error generating Employee ID:', error);
+      // Fallback: use timestamp-based ID
+      const fallbackId = `EMP-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+      setUserFormData(prev => ({
+        ...prev,
+        employeeId: fallbackId
+      }));
+    }
+  }, [identities]);
+
+  // Load identities on mount
+  useEffect(() => {
+    reloadIdentities();
+  }, [reloadIdentities]);
+
+  // Load available managers and departments when dialog opens
+  useEffect(() => {
+    if (showCreateUserDialog) {
+      // Filter to only active users who can be managers
+      const managers = identities.filter(identity => 
+        identity.status === 'Active' && identity.id // Only active users with valid IDs
+      );
+      setAvailableManagers(managers);
+
+      // Auto-generate Employee ID
+      generateEmployeeId();
+    }
+  }, [showCreateUserDialog, identities, generateEmployeeId]);
+
+  // Extract unique departments from identities
+  const availableDepartments = useMemo(() => {
+    const departments = new Set<string>();
+    identities.forEach(identity => {
+      if (identity.department && identity.department.trim() !== '') {
+        // Capitalize first letter of each word for display
+        const formatted = identity.department
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+        departments.add(formatted);
+      }
+    });
+    // Sort departments alphabetically
+    return Array.from(departments).sort();
+  }, [identities]);
+
   // Effect to handle userId from URL params
   useEffect(() => {
     if (userId) {
-      const user = identitiesData.find(
+      const user = identities.find(
         identity => normalizeNameToId(identity.name) === userId
       );
       if (user) {
@@ -282,7 +565,7 @@ export function EnhancedIdentitiesPage() {
     } else {
       setSelectedUser(null);
     }
-  }, [userId, location.state]);
+  }, [userId, location.state, identities]);
 
   // Update URL when user is selected/deselected
   const handleUserSelect = (user: Identity | null) => {
@@ -298,7 +581,7 @@ export function EnhancedIdentitiesPage() {
 
   // Filter and search logic
   const filteredIdentities = useMemo(() => {
-    let result = [...identitiesData];
+    let result = [...identities];
 
     // Apply search
     if (searchQuery) {
@@ -334,7 +617,7 @@ export function EnhancedIdentitiesPage() {
     });
 
     return result;
-  }, [searchQuery, filters]);
+  }, [identities, searchQuery, filters]);
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
@@ -412,24 +695,23 @@ export function EnhancedIdentitiesPage() {
           }}>
             Identities
           </h1>
-          <Button 
-            style={{ backgroundColor: 'var(--primary)', color: 'white' }}
-            onClick={() => {
-              // Log the action for audit trail
-              console.log('Invite User button clicked', {
-                timestamp: new Date().toISOString(),
-                action: 'open_invite_user_dialog',
-                user: 'current_user', // In real implementation, get from context
-                correlationId: `invite-user-${Date.now()}`
-              });
-              
-              // Open the invite user dialog
-              setShowInviteDialog(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Invite User
-          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button 
+              style={{ backgroundColor: 'var(--primary)', color: 'white' }}
+              onClick={() => setShowCreateUserDialog(true)}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Create User
+            </Button>
+            <Button 
+              variant="outline"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              onClick={() => setShowInviteDialog(true)}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Invite User
+            </Button>
+          </div>
         </div>
 
         {/* Toolbar */}
@@ -776,13 +1058,23 @@ export function EnhancedIdentitiesPage() {
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="it">IT</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="hr">HR</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
+                        {availableDepartments.length > 0 ? (
+                          availableDepartments.map((dept) => (
+                            <SelectItem key={dept.toLowerCase()} value={dept.toLowerCase()}>
+                              {dept}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="finance">Finance</SelectItem>
+                            <SelectItem value="it">IT</SelectItem>
+                            <SelectItem value="sales">Sales</SelectItem>
+                            <SelectItem value="hr">HR</SelectItem>
+                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="engineering">Engineering</SelectItem>
+                            <SelectItem value="operations">Operations</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -793,22 +1085,119 @@ export function EnhancedIdentitiesPage() {
                         <SelectValue placeholder="Select manager" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="alice-johnson">Alice Johnson</SelectItem>
-                        <SelectItem value="mike-chen">Mike Chen</SelectItem>
-                        <SelectItem value="sarah-patel">Sarah Patel</SelectItem>
-                        <SelectItem value="jennifer-smith">Jennifer Smith</SelectItem>
+                        {availableManagers.length > 0 ? (
+                          availableManagers.map((manager) => (
+                            <SelectItem key={manager.id} value={manager.id}>
+                              {manager.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>No managers available</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Input
+                      id="jobTitle"
+                      placeholder="Enter job title"
+                      value={userFormData.jobTitle}
+                      onChange={(e) => handleFormFieldChange('jobTitle', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeId">Employee ID</Label>
+                    <Input
+                      id="employeeId"
+                      placeholder="Auto-generated"
+                      value={userFormData.employeeId}
+                      onChange={(e) => handleFormFieldChange('employeeId', e.target.value)}
+                      readOnly
+                      className="bg-muted cursor-not-allowed"
+                      title="Employee ID is automatically generated"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Automatically generated (format: EMP-YYYY-NNNN)
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="division">Division</Label>
+                    <Input
+                      id="division"
+                      placeholder="Enter division"
+                      value={userFormData.division}
+                      onChange={(e) => handleFormFieldChange('division', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="businessUnit">Business Unit</Label>
+                    <Input
+                      id="businessUnit"
+                      placeholder="Enter business unit"
+                      value={userFormData.businessUnit}
+                      onChange={(e) => handleFormFieldChange('businessUnit', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="Enter location"
+                      value={userFormData.location}
+                      onChange={(e) => handleFormFieldChange('location', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="costCenter">Cost Center</Label>
+                    <Input
+                      id="costCenter"
+                      placeholder="Enter cost center"
+                      value={userFormData.costCenter}
+                      onChange={(e) => handleFormFieldChange('costCenter', e.target.value)}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <Label htmlFor="officeAddress">Office Address</Label>
                   <Input
-                    id="jobTitle"
-                    placeholder="Enter job title"
-                    value={userFormData.jobTitle}
-                    onChange={(e) => handleFormFieldChange('jobTitle', e.target.value)}
+                    id="officeAddress"
+                    placeholder="Enter office address"
+                    value={userFormData.officeAddress}
+                    onChange={(e) => handleFormFieldChange('officeAddress', e.target.value)}
                   />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="employmentType">Employment Type</Label>
+                    <Select value={userFormData.employmentType} onValueChange={(value) => handleFormFieldChange('employmentType', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select employment type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full-time">Full-time</SelectItem>
+                        <SelectItem value="part-time">Part-time</SelectItem>
+                        <SelectItem value="contractor">Contractor</SelectItem>
+                        <SelectItem value="intern">Intern</SelectItem>
+                        <SelectItem value="consultant">Consultant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={userFormData.startDate}
+                      onChange={(e) => handleFormFieldChange('startDate', e.target.value)}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -900,14 +1289,50 @@ export function EnhancedIdentitiesPage() {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountExpiration">Account Expiration</Label>
+                    <Input
+                      id="accountExpiration"
+                      type="date"
+                      value={userFormData.accountExpiration}
+                      onChange={(e) => handleFormFieldChange('accountExpiration', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone">Timezone</Label>
+                    <Select value={userFormData.timezone} onValueChange={(value) => handleFormFieldChange('timezone', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                        <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                        <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                        <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                        <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                        <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                        <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="accountExpiration">Account Expiration</Label>
-                  <Input
-                    id="accountExpiration"
-                    type="date"
-                    value={userFormData.accountExpiration}
-                    onChange={(e) => handleFormFieldChange('accountExpiration', e.target.value)}
-                  />
+                  <Label htmlFor="preferredLanguage">Preferred Language</Label>
+                  <Select value={userFormData.preferredLanguage} onValueChange={(value) => handleFormFieldChange('preferredLanguage', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="zh">Chinese</SelectItem>
+                      <SelectItem value="ja">Japanese</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -935,6 +1360,50 @@ export function EnhancedIdentitiesPage() {
                       checked={userFormData.requirePasswordChange}
                       onCheckedChange={(checked) => handleFormFieldChange('requirePasswordChange', checked)}
                     />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Compliance & Governance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Shield className="w-4 h-4" />
+                  Compliance & Governance
+                </CardTitle>
+                <CardDescription>
+                  Data classification and privacy settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dataClassification">Data Classification</Label>
+                    <Select value={userFormData.dataClassification} onValueChange={(value) => handleFormFieldChange('dataClassification', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select classification" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">Public</SelectItem>
+                        <SelectItem value="internal">Internal</SelectItem>
+                        <SelectItem value="confidential">Confidential</SelectItem>
+                        <SelectItem value="restricted">Restricted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="privacyConsentStatus">Privacy Consent Status</Label>
+                    <Select value={userFormData.privacyConsentStatus} onValueChange={(value) => handleFormFieldChange('privacyConsentStatus', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="granted">Granted</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="revoked">Revoked</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>

@@ -22,6 +22,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
+import { AuthenticationTab } from './settings/AuthenticationTab';
 
 export function SettingsPage() {
   // State management for all settings
@@ -770,7 +771,10 @@ export function SettingsPage() {
 
           {/* Identity & Access Management Tab */}
           <TabsContent value="iam" className="p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* SSO Provider Configuration - Full UI */}
+            <AuthenticationTab onFieldChange={() => updateSetting('identity.ssoEnabled', true)} />
+            
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Authentication Methods */}
               <div className="space-y-6">
                 <div>

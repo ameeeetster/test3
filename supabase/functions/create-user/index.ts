@@ -1,0 +1,322 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    // Create Supabase client with service role
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Verify the user is authenticated
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Parse request body
+    const body = await req.json()
+    const { 
+      email, 
+      password, 
+      full_name, 
+      org_id,
+      role = 'member',
+      // Personal Information
+      first_name,
+      last_name,
+      phone,
+      mobile_phone,
+      // Organizational Information
+      department,
+      division,
+      business_unit,
+      manager_id,
+      job_title,
+      location,
+      office_address,
+      cost_center,
+      employee_id,
+      // Employment
+      employment_type,
+      start_date,
+      end_date,
+      // Access Control
+      status = 'active',
+      risk_level = 'low',
+      initial_roles = [],
+      // Account Settings
+      username,
+      account_expiration,
+      timezone,
+      preferred_language,
+      require_password_change = false,
+      send_welcome_email = false,
+      // Compliance
+      data_classification,
+      privacy_consent_status,
+      // Additional
+      notes
+    } = body
+
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: 'Email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
+    const userExists = existingUser?.users?.some(u => u.email === normalizedEmail)
+
+    let userId: string
+
+    if (userExists) {
+      // User exists, get their ID
+      const existing = existingUser.users.find(u => u.email === normalizedEmail)
+      userId = existing!.id
+    } else {
+      // Create new auth user
+      if (!password) {
+        return new Response(
+          JSON.stringify({ error: 'Password is required for new users' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        password: password,
+        email_confirm: true, // Auto-confirm
+        user_metadata: {
+          name: full_name || '',
+          created_by_admin: true
+        }
+      })
+
+      if (createError || !newUser.user) {
+        console.error('Error creating user:', createError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user account', details: createError?.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      userId = newUser.user.id
+    }
+
+    // Get current user's org if org_id not provided
+    let targetOrgId = org_id
+    if (!targetOrgId) {
+      const { data: memberships, error: membershipError } = await supabaseAdmin
+        .from('user_orgs')
+        .select('org_id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+      
+      if (!membershipError && memberships && memberships.length > 0) {
+        targetOrgId = memberships[0].org_id
+      }
+    }
+
+    // If no org found, create one (edge function uses service role, so RLS doesn't apply)
+    if (!targetOrgId) {
+      console.log('⚠️ No organization found, creating default one...')
+      
+      const newOrgId = crypto.randomUUID()
+      const { data: createdOrg, error: createOrgError } = await supabaseAdmin
+        .from('orgs')
+        .insert({
+          id: newOrgId,
+          name: 'Default Organization',
+          slug: `org-${newOrgId.substring(0, 8)}`,
+          is_active: true
+        })
+        .select()
+        .single()
+      
+      if (createOrgError || !createdOrg) {
+        console.error('Error creating organization:', createOrgError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to create organization', details: createOrgError?.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      console.log('✅ Organization created:', createdOrg.id)
+      
+      // Link current user to organization with admin role
+      const { error: membershipError2 } = await supabaseAdmin
+        .from('user_orgs')
+        .insert({
+          user_id: user.id,
+          org_id: newOrgId,
+          role: 'org_admin',
+          is_active: true
+        })
+      
+      if (membershipError2) {
+        console.error('Error creating membership:', membershipError2)
+        // Continue anyway - org is created, membership can be fixed later
+      }
+      
+      targetOrgId = newOrgId
+    }
+
+    // Validate manager_id is a valid UUID if provided
+    let validManagerId: string | null = null
+    if (manager_id) {
+      // Check if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (uuidRegex.test(manager_id)) {
+        validManagerId = manager_id
+      } else {
+        console.warn(`Invalid manager_id format: ${manager_id}, setting to null`)
+      }
+    }
+
+    // Upsert profile with all fields
+    const profileData: any = {
+      id: userId,
+      email: normalizedEmail,
+      full_name: full_name || '',
+      mfa_enabled: false,
+      // Personal Information
+      first_name: first_name || null,
+      last_name: last_name || null,
+      phone: phone || null,
+      mobile_phone: mobile_phone || null,
+      // Organizational Information
+      department: department || null,
+      division: division || null,
+      business_unit: business_unit || null,
+      manager_id: validManagerId,
+      job_title: job_title || null,
+      location: location || null,
+      office_address: office_address || null,
+      cost_center: cost_center || null,
+      employee_id: employee_id || null,
+      // Employment
+      employment_type: employment_type || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      // Access Control
+      status: status || 'active',
+      risk_level: risk_level || 'low',
+      // Account Settings
+      username: username || null,
+      account_expiration: account_expiration ? new Date(account_expiration).toISOString() : null,
+      timezone: timezone || null,
+      preferred_language: preferred_language || null,
+      require_password_change: require_password_change || false,
+      // Compliance
+      data_classification: data_classification || null,
+      privacy_consent_status: privacy_consent_status || null,
+      // Additional
+      notes: notes || null
+    }
+
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert(profileData)
+
+    if (profileError) {
+      console.error('Error upserting profile:', profileError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create user profile', details: profileError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Upsert user_orgs membership
+    const { error: membershipError } = await supabaseAdmin
+      .from('user_orgs')
+      .upsert({
+        user_id: userId,
+        org_id: targetOrgId,
+        role: role,
+        is_active: true
+      }, {
+        onConflict: 'user_id,org_id'
+      })
+
+    if (membershipError) {
+      console.error('Error creating org membership:', membershipError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create organization membership', details: membershipError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Get the created profile
+    const { data: profile, error: profileFetchError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email, full_name')
+      .eq('id', userId)
+      .single()
+
+    if (profileFetchError) {
+      console.error('Error fetching created profile:', profileFetchError)
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        user: {
+          id: userId,
+          email: normalizedEmail,
+          full_name: full_name || '',
+          profile: profile || null
+        }
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
+
