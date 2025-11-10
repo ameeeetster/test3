@@ -20,7 +20,7 @@ export function ProtectedLayout() {
     });
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      sub?.subscription?.unsubscribe?.();
     };
   }, []);
 
