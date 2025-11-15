@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { TopProgressBar } from './TopProgressBar';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, CheckSquare, Users, Shield, 
@@ -58,6 +59,7 @@ export function AppShell({ children }: AppShellProps) {
   const [darkMode, setDarkMode] = useState(false);
   const { user, hasPermission } = useUser();
   const { session, profile } = useAuth();
+  const [routeLoading, setRouteLoading] = React.useState(false);
 
   const displayName = React.useMemo(() => {
     return (
@@ -84,6 +86,14 @@ export function AppShell({ children }: AppShellProps) {
     }
   }, [darkMode]);
 
+  // Fake a top progress bar on route changes
+  React.useEffect(() => {
+    setRouteLoading(true);
+    const id = setTimeout(() => setRouteLoading(false), 500);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
@@ -95,8 +105,29 @@ export function AppShell({ children }: AppShellProps) {
     return hasPermission(item.permission);
   });
 
+  // Keyboard shortcuts
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Focus search: '/' or Ctrl/Cmd+K
+      if (e.key === '/' || (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      // Navigation: Alt+R/A/I
+      if (e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key.toLowerCase() === 'r') window.location.href = '/requests';
+        if (e.key.toLowerCase() === 'a') window.location.href = '/approvals';
+        if (e.key.toLowerCase() === 'i') window.location.href = '/identities';
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg)' }}>
+      <TopProgressBar active={routeLoading} />
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-[264px] border-r" style={{ 
         backgroundColor: 'var(--sidebar)',
@@ -105,18 +136,26 @@ export function AppShell({ children }: AppShellProps) {
         {/* Enhanced Logo */}
         <div className="h-18 flex items-center px-6 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105" style={{ 
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+            <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105" style={{
+              background: 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
+              boxShadow: '0 6px 16px rgba(29, 78, 216, 0.25)'
             }}>
-              <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
+              {/* Identityverse Galaxy Mark */}
+              <svg width="32" height="32" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="13" cy="13" r="3" fill="white"/>
+                <circle cx="13" cy="13" r="8" stroke="white" strokeWidth="1.4" opacity="0.35"/>
+                <circle cx="13" cy="13" r="11" stroke="white" strokeWidth="1.2" opacity="0.18"/>
+                <circle cx="19" cy="9" r="1.4" fill="white" opacity="0.9"/>
+                <circle cx="8" cy="19" r="1.2" fill="white" opacity="0.85"/>
+                <circle cx="7" cy="7" r="1" fill="white" opacity="0.75"/>
+              </svg>
             </div>
             <div>
               <span className="font-bold tracking-tight block" style={{ 
                 fontSize: 'var(--text-lg)',
                 color: 'var(--text)',
                 lineHeight: '1.2'
-              }}>IAM Platform</span>
+              }}>Identityverse</span>
               <span className="text-xs font-medium" style={{ 
                 color: 'var(--muted-foreground)',
                 letterSpacing: '0.05em'
@@ -183,7 +222,7 @@ export function AppShell({ children }: AppShellProps) {
                   e.currentTarget.style.backgroundColor = 'var(--accent)';
                 }}
               >
-                <Avatar className="w-9 h-9 ring-2 ring-border">
+              <Avatar className="w-9 h-9 ring-2 ring-border avatar-ring">
                   <AvatarFallback style={{ 
                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
                     color: 'white',
@@ -316,13 +355,24 @@ export function AppShell({ children }: AppShellProps) {
             {/* Logo */}
             <div className="h-16 flex items-center justify-between px-6 border-b" style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
-                  <Shield className="w-5 h-5 text-white" />
+                <div className="relative w-12 h-12 rounded-xl flex items-center justify-center" style={{ 
+                  background: 'linear-gradient(135deg, #1D4ED8 0%, #7C3AED 100%)',
+                  boxShadow: '0 4px 12px rgba(29, 78, 216, 0.25)'
+                }}>
+                  {/* Identityverse Galaxy Mark */}
+                  <svg width="28" height="28" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="13" cy="13" r="3" fill="white"/>
+                    <circle cx="13" cy="13" r="8" stroke="white" strokeWidth="1.3" opacity="0.35"/>
+                    <circle cx="13" cy="13" r="11" stroke="white" strokeWidth="1.1" opacity="0.18"/>
+                    <circle cx="19" cy="9" r="1.4" fill="white" opacity="0.9"/>
+                    <circle cx="8" cy="19" r="1.2" fill="white" opacity="0.85"/>
+                    <circle cx="7" cy="7" r="1" fill="white" opacity="0.75"/>
+                  </svg>
                 </div>
                 <span className="font-semibold" style={{ 
                   fontSize: 'var(--text-h2)',
                   color: 'var(--text)'
-                }}>IAM Platform</span>
+                }}>Identityverse</span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                 <X className="w-5 h-5" />
@@ -383,6 +433,7 @@ export function AppShell({ children }: AppShellProps) {
                   backgroundColor: 'var(--input-background)',
                   fontSize: 'var(--text-sm)'
                 }}
+                ref={searchInputRef as any}
               />
               <kbd 
                 className="absolute right-3 pointer-events-none px-1.5 py-0.5 rounded border text-[10px] font-semibold"
@@ -433,7 +484,7 @@ export function AppShell({ children }: AppShellProps) {
 
             {/* Mobile User */}
             <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9">
-              <Avatar className="w-7 h-7">
+              <Avatar className="w-7 h-7 avatar-ring">
                 <AvatarFallback style={{ 
                   background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
                   color: 'white',

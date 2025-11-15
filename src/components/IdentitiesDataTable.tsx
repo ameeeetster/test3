@@ -1,3 +1,4 @@
+import { RiskBadge } from './RiskBadge';
 import React, { useState } from 'react';
 import { Eye, AlertCircle, Info } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -8,14 +9,16 @@ import { Skeleton } from './ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { StatusChip } from './StatusChip';
-import { RiskChip } from './RiskChip';
 
 export interface Identity {
   id: string;
   name: string;
   email: string;
+  email: string;
   department: string;
   manager: string;
+  managerId?: string;
+  managerEmail?: string;
   status: 'Active' | 'Inactive' | 'Disabled' | 'Pending';
   risk: 'Critical' | 'High' | 'Medium' | 'Low';
   roles: number;
@@ -294,14 +297,20 @@ export const IdentitiesDataTable = React.memo(function IdentitiesDataTable({
                   aria-label="Select all identities"
                 />
               </TableHead>
-              <TableHead className="sticky z-10" style={{ 
-                backgroundColor: 'var(--surface)', 
-                left: '48px',
-                width: '280px',
-                minWidth: '280px',
-                maxWidth: '280px',
-                boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)'
-              }}>User</TableHead>
+              <TableHead 
+                className="sticky z-10 px-0" 
+                style={{ 
+                  textAlign: 'center',
+                  backgroundColor: 'var(--surface)', 
+                  left: '48px',
+                  width: '280px',
+                  minWidth: '280px',
+                  maxWidth: '280px',
+                  boxShadow: '2px 0 4px -2px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <div className="flex justify-center">User</div>
+              </TableHead>
               <TableHead style={{ minWidth: '140px' }}>Department</TableHead>
               <TableHead style={{ minWidth: '140px' }}>Job Title</TableHead>
               <TableHead style={{ minWidth: '140px' }}>Manager</TableHead>
@@ -381,8 +390,8 @@ export const IdentitiesDataTable = React.memo(function IdentitiesDataTable({
                       aria-label={`Select ${identity.name}`}
                     />
                   </TableCell>
-                  <TableCell 
-                    className="sticky z-10 sticky-cell" 
+              <TableCell 
+                    className="sticky z-10 sticky-cell"
                     style={{ 
                       backgroundColor: 'var(--surface)',
                       left: '48px',
@@ -445,7 +454,7 @@ export const IdentitiesDataTable = React.memo(function IdentitiesDataTable({
                     <StatusChip status={identity.status} size="sm" />
                   </TableCell>
                   <TableCell>
-                    <RiskChip risk={identity.risk} size="sm" withTooltip />
+                    <RiskBadge userId={identity.id} size="sm" showScore />
                   </TableCell>
                   <TableCell>
                     <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>

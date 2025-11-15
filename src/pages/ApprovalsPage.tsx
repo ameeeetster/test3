@@ -1,4 +1,4 @@
-import React, { useMemo, useState, lazy, Suspense } from 'react';
+import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 import { Search, Filter, Download, CheckSquare, XSquare, Eye, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,6 +12,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { useApprovals } from '../contexts/ApprovalsContext';
+import { ApprovalChanges } from '../components/ApproveWithChangesDialog';
+import { EmptyState } from '../components/EmptyState';
+import { TableSkeleton } from '../components/skeletons/TableSkeleton';
 
 // Lazy load the heavy drawer component
 const EnhancedApprovalDrawer = lazy(() => 
@@ -49,10 +52,13 @@ interface ApprovalRequest {
     name: string;
     scope?: string;
   }>;
+  approvedAt?: string | null;
+  completedAt?: string | null;
+  forUserId?: string | null;
 }
 
 export function ApprovalsPage() {
-  const { requests: allRequests } = useApprovals();
+  const { requests: allRequests, updateStatus } = useApprovals();
   const [selectedTab, setSelectedTab] = useState('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
@@ -60,6 +66,19 @@ export function ApprovalsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<{ label: string; value: string }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [bootLoading, setBootLoading] = useState(true);
+  const [savedViews, setSavedViews] = useState<Array<{ name: string; state: any }>>([]);
+  const [selectedView, setSelectedView] = useState<string>('');
+  useEffect(() => {
+    const t = setTimeout(() => setBootLoading(false), 300);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    const raw = localStorage.getItem('views:approvals');
+    if (raw) {
+      try { setSavedViews(JSON.parse(raw)); } catch {}
+    }
+  }, []);
   
   // Filter states
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
@@ -72,6 +91,42 @@ export function ApprovalsPage() {
     { value: 'rejected', label: 'Rejected', count: allRequests.filter(r => r.status === 'Rejected').length },
     { value: 'high-risk', label: 'High Risk', count: allRequests.filter(r => ['High','Critical'].includes(r.risk)).length }
   ]), [allRequests]);
+  
+  const saveCurrentView = () => {
+    const name = window.prompt('Save view as:');
+    if (!name) return;
+    const state = {
+      selectedTab,
+      searchQuery,
+      statusFilters,
+      riskFilters,
+      departmentFilters,
+    };
+    const existing = savedViews.filter(v => v.name !== name);
+    const next = [...existing, { name, state }];
+    setSavedViews(next);
+    localStorage.setItem('views:approvals', JSON.stringify(next));
+    setSelectedView(name);
+    toast.success('View saved');
+  };
+  const applyView = (name: string) => {
+    setSelectedView(name);
+    const v = savedViews.find(v => v.name === name);
+    if (!v) return;
+    setSelectedTab(v.state.selectedTab || 'pending');
+    setSearchQuery(v.state.searchQuery || '');
+    setStatusFilters(v.state.statusFilters || []);
+    setRiskFilters(v.state.riskFilters || []);
+    setDepartmentFilters(v.state.departmentFilters || []);
+  };
+  const deleteView = () => {
+    if (!selectedView) return;
+    const next = savedViews.filter(v => v.name !== selectedView);
+    setSavedViews(next);
+    localStorage.setItem('views:approvals', JSON.stringify(next));
+    setSelectedView('');
+    toast.message('View deleted');
+  };
   
   // Filter requests based on tab, search, and filters
   const filteredRequests = allRequests.filter(req => {
@@ -120,21 +175,92 @@ export function ApprovalsPage() {
     setDrawerOpen(true);
   };
 
-  const handleApprove = (id: string, withChanges?: boolean) => {
-    const message = withChanges ? 'Request approved with modifications' : 'Request approved successfully';
-    toast.success(message, {
-      description: `${id} has been approved and will be provisioned shortly.`
-    });
-    setDrawerOpen(false);
-    setSelectedRequest(null);
+  const handleApprove = async (id: string, withChanges?: boolean, changes?: ApprovalChanges) => {
+    try {
+      console.log('🔄 Approving request:', id, withChanges ? 'with changes' : 'as requested', changes);
+      
+      // If there are changes, update the request first, then approve
+      if (withChanges && changes) {
+        // Update request with modifications
+        const { RequestsService } = await import('../services/requestsService');
+        
+        const updates: any = {};
+        if (changes.modifiedAccessLevel) {
+          // Extract the resource name and update with new access level
+          const selectedRequest = allRequests.find(r => r.id === id);
+          if (selectedRequest) {
+            const resourceParts = selectedRequest.item.name.split(' • ');
+            updates.resource_name = resourceParts[0] + ' • ' + changes.modifiedAccessLevel;
+          }
+        }
+        if (changes.modifiedDurationDays !== undefined) {
+          updates.duration_days = changes.modifiedDurationDays;
+        }
+        
+        // Add approval comments/reason to business justification or notes
+        if (changes.reasonForChanges || changes.comments) {
+          const commentText = [
+            changes.reasonForChanges && `Approval Changes: ${changes.reasonForChanges}`,
+            changes.comments && `Additional Comments: ${changes.comments}`
+          ].filter(Boolean).join('\n\n');
+          
+          // Append to existing justification
+          const selectedRequest = allRequests.find(r => r.id === id);
+          if (selectedRequest) {
+            updates.business_justification = selectedRequest.businessJustification + '\n\n--- APPROVAL MODIFICATIONS ---\n' + commentText;
+          }
+        }
+        
+        // Update the request with modifications
+        if (Object.keys(updates).length > 0) {
+          await RequestsService.update(id, updates);
+          console.log('✅ Request updated with modifications:', updates);
+        }
+      }
+      
+      // Approve the request
+      await updateStatus(id, 'Approved');
+      console.log('✅ Request approved successfully:', id);
+      
+      const message = withChanges 
+        ? 'Request approved with modifications' 
+        : 'Request approved successfully';
+      const description = withChanges && changes?.reasonForChanges
+        ? `${id} has been approved with modifications: ${changes.reasonForChanges.substring(0, 50)}...`
+        : `${id} has been approved and will be provisioned shortly.`;
+      
+      toast.success(message, {
+        description,
+        duration: 5000
+      });
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error: any) {
+      console.error('❌ Failed to approve request:', error);
+      toast.error('Failed to approve request', {
+        description: error?.message || 'An error occurred while approving the request. Please try again.'
+      });
+      // Don't close drawer on error so user can retry
+    }
   };
 
-  const handleReject = (id: string, reason: string) => {
-    toast.error('Request rejected', {
-      description: `${id} has been rejected. The requester will be notified.`
-    });
-    setDrawerOpen(false);
-    setSelectedRequest(null);
+  const handleReject = async (id: string, reason: string) => {
+    try {
+      console.log('🔄 Rejecting request:', id, 'Reason:', reason);
+      await updateStatus(id, 'Rejected');
+      console.log('✅ Request rejected successfully:', id);
+      toast.error('Request rejected', {
+        description: `${id} has been rejected. The requester will be notified.`
+      });
+      setDrawerOpen(false);
+      setSelectedRequest(null);
+    } catch (error: any) {
+      console.error('❌ Failed to reject request:', error);
+      toast.error('Failed to reject request', {
+        description: error?.message || 'An error occurred while rejecting the request. Please try again.'
+      });
+      // Don't close drawer on error so user can retry
+    }
   };
 
   const handleDelegate = (id: string, delegateTo?: string) => {
@@ -145,14 +271,20 @@ export function ApprovalsPage() {
     setSelectedRequest(null);
   };
 
-  const handleBulkApprove = () => {
+  const handleBulkApprove = async () => {
+    for (const id of selectedRequests) {
+      await updateStatus(id, 'Approved');
+    }
     toast.success(`${selectedRequests.size} requests approved`, {
       description: 'The selected requests have been approved.'
     });
     setSelectedRequests(new Set());
   };
 
-  const handleBulkReject = () => {
+  const handleBulkReject = async () => {
+    for (const id of selectedRequests) {
+      await updateStatus(id, 'Rejected');
+    }
     toast.error(`${selectedRequests.size} requests rejected`, {
       description: 'The selected requests have been rejected.'
     });
@@ -268,6 +400,26 @@ export function ApprovalsPage() {
                     </Badge>
                   )}
                 </Button>
+                {/* Saved Views */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedView}
+                    onChange={(e) => applyView(e.target.value)}
+                    className="h-10 rounded-md border px-3 text-sm"
+                    style={{ backgroundColor: 'var(--input-background)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                  >
+                    <option value="">Saved views…</option>
+                    {savedViews.map(v => (
+                      <option key={v.name} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
+                  <Button variant="outline" size="sm" onClick={saveCurrentView} className="h-10">
+                    Save view
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={deleteView} className="h-10">
+                    Delete
+                  </Button>
+                </div>
                 <Button variant="outline" className="gap-2">
                   <Download className="w-4 h-4" />
                   Export
@@ -536,38 +688,25 @@ export function ApprovalsPage() {
             </div>
           </div>
 
-          {/* Empty State */}
-          {filteredRequests.length === 0 && (
-            <div className="py-16 text-center">
-              <CheckSquare 
-                className="w-12 h-12 mx-auto mb-4" 
-                style={{ color: 'var(--muted-foreground)', opacity: 0.5 }} 
-              />
-              <h3 style={{ 
-                fontSize: 'var(--text-lg)',
-                fontWeight: 'var(--font-weight-semibold)',
-                color: 'var(--text)',
-                marginBottom: '8px'
-              }}>
-                No approvals found
-              </h3>
-              <p style={{ 
-                fontSize: 'var(--text-body)',
-                color: 'var(--muted-foreground)',
-                marginBottom: '16px'
-              }}>
-                {searchQuery ? 'Try adjusting your search or filters' : 'All caught up! No pending approvals at the moment.'}
-              </p>
-              {selectedTab !== 'pending' && (
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedTab('pending')}
-                >
-                  View Pending Approvals
-                </Button>
-              )}
+          {/* Empty / Loading State */}
+          {bootLoading ? (
+            <div className="p-4">
+              <TableSkeleton rows={8} columns={8} />
             </div>
-          )}
+          ) : filteredRequests.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                title="No approvals found"
+                description={
+                  searchQuery
+                    ? 'Try adjusting your search or filters.'
+                    : 'All caught up! No pending approvals at the moment.'
+                }
+                actionLabel={selectedTab !== 'pending' ? 'View Pending' : undefined}
+                onAction={selectedTab !== 'pending' ? () => setSelectedTab('pending') : undefined}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 

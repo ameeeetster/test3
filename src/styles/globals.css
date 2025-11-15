@@ -11,25 +11,25 @@
   --text: #0F172A;
   --text-secondary: #475569;
   --muted: #94A3B8;
-  --primary: #4F46E5;
-  --primary-light: #6366F1;
-  --primary-dark: #4338CA;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  --primary: #6B7CFF;
+  --primary-light: #8A97FF;
+  --primary-dark: #525FCF;
+  --success: #21C58E;
+  --warning: #F0B429;
+  --danger: #FF6B6B;
   --info: #0EA5E9;
   --border: #E2E8F0;
   --border-light: #F1F5F9;
   
   /* Alert backgrounds - light mode */
-  --danger-bg: rgb(254 242 242);
-  --danger-bg-subtle: rgb(255 245 245);
-  --danger-border: rgb(254 226 226);
-  --warning-bg: rgb(255 251 235);
-  --warning-bg-subtle: rgb(255 252 240);
-  --warning-border: rgb(254 243 199);
-  --success-bg: rgb(236 253 245);
-  --success-border: rgb(209 250 229);
+  --danger-bg: color-mix(in oklab, var(--danger) 12%, transparent);
+  --danger-bg-subtle: color-mix(in oklab, var(--danger) 8%, transparent);
+  --danger-border: color-mix(in oklab, var(--danger) 40%, transparent);
+  --warning-bg: color-mix(in oklab, var(--warning) 12%, transparent);
+  --warning-bg-subtle: color-mix(in oklab, var(--warning) 8%, transparent);
+  --warning-border: color-mix(in oklab, var(--warning) 40%, transparent);
+  --success-bg: color-mix(in oklab, var(--success) 12%, transparent);
+  --success-border: color-mix(in oklab, var(--success) 40%, transparent);
   --info-bg: rgb(238 242 255);
   --info-border: rgb(224 231 255);
   
@@ -51,7 +51,9 @@
   --input: transparent;
   --input-background: #F8FAFC;
   --switch-background: #E2E8F0;
-  --ring: #4F46E5;
+  --ring: color-mix(in oklab, var(--primary) 35%, transparent);
+  --ease-out: cubic-bezier(.22,.61,.36,1);
+  --transition-base: 160ms var(--ease-out);
   
   /* Chart colors - refined palette */
   --chart-1: #4F46E5;
@@ -71,9 +73,9 @@
   
   /* Enhanced Elevation System */
   --shadow-none: none;
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.10);
+  --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.20);
+  --shadow-md: 0 24px 48px rgba(0, 0, 0, 0.28);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
   
@@ -154,25 +156,25 @@
   --text: #F1F5F9;
   --text-secondary: #CBD5E1;
   --muted: #64748B;
-  --primary: #6366F1;
-  --primary-light: #818CF8;
-  --primary-dark: #4F46E5;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --danger: #F87171;
+  --primary: #8A97FF;
+  --primary-light: #A6B0FF;
+  --primary-dark: #6B7CFF;
+  --success: #21C58E;
+  --warning: #F0B429;
+  --danger: #FF6B6B;
   --info: #38BDF8;
   --border: #1E293B;
   --border-light: #334155;
   
   /* Alert backgrounds - dark mode (muted, less flashy) */
-  --danger-bg: rgba(127, 29, 29, 0.25);
-  --danger-bg-subtle: rgba(127, 29, 29, 0.15);
-  --danger-border: rgba(127, 29, 29, 0.4);
-  --warning-bg: rgba(113, 63, 18, 0.25);
-  --warning-bg-subtle: rgba(113, 63, 18, 0.15);
-  --warning-border: rgba(113, 63, 18, 0.4);
-  --success-bg: rgba(6, 78, 59, 0.25);
-  --success-border: rgba(6, 78, 59, 0.4);
+  --danger-bg: color-mix(in oklab, var(--danger) 20%, transparent);
+  --danger-bg-subtle: color-mix(in oklab, var(--danger) 12%, transparent);
+  --danger-border: color-mix(in oklab, var(--danger) 40%, transparent);
+  --warning-bg: color-mix(in oklab, var(--warning) 20%, transparent);
+  --warning-bg-subtle: color-mix(in oklab, var(--warning) 12%, transparent);
+  --warning-border: color-mix(in oklab, var(--warning) 40%, transparent);
+  --success-bg: color-mix(in oklab, var(--success) 20%, transparent);
+  --success-border: color-mix(in oklab, var(--success) 40%, transparent);
   --info-bg: rgba(30, 58, 138, 0.25);
   --info-border: rgba(30, 58, 138, 0.4);
   
@@ -194,7 +196,7 @@
   --input: #1E293B;
   --input-background: #111827;
   --switch-background: #334155;
-  --ring: #6366F1;
+  --ring: color-mix(in oklab, var(--primary) 35%, transparent);
   
   /* Chart colors - adjusted for dark mode */
   --chart-1: #6366F1;

@@ -6,6 +6,7 @@ import { Separator } from './ui/separator';
 import { ConflictChip } from './ConflictChip';
 import { ConflictsModal } from './ConflictsModal';
 import { RejectionDialog } from './RejectionDialog';
+import { ApproveWithChangesDialog, ApprovalChanges } from './ApproveWithChangesDialog';
 import { ImpactPreview } from './ImpactPreview';
 import { UsageIntelligence } from './UsageIntelligence';
 import { AIRecommendations } from './AIRecommendations';
@@ -46,7 +47,7 @@ interface EnhancedApprovalDrawerProps {
   request: ApprovalRequest;
   open: boolean;
   onClose: () => void;
-  onApprove: (id: string, withChanges?: boolean) => void;
+  onApprove: (id: string, withChanges?: boolean, changes?: ApprovalChanges) => void;
   onReject: (id: string, reason: string) => void;
   onDelegate: (id: string, delegateTo?: string) => void;
 }
@@ -61,6 +62,7 @@ export function EnhancedApprovalDrawer({
 }: EnhancedApprovalDrawerProps) {
   const [showConflictsModal, setShowConflictsModal] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [showApproveWithChangesDialog, setShowApproveWithChangesDialog] = useState(false);
   const [showDelegateDialog, setShowDelegateDialog] = useState(false);
   const [appliedRecommendations, setAppliedRecommendations] = useState<string[]>([]);
 
@@ -630,7 +632,7 @@ export function EnhancedApprovalDrawer({
                   <DropdownMenuItem onClick={() => onApprove(request.id)}>
                     Approve as requested
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onApprove(request.id, true)}>
+                  <DropdownMenuItem onClick={() => setShowApproveWithChangesDialog(true)}>
                     Approve with changes
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -672,6 +674,23 @@ export function EnhancedApprovalDrawer({
           onClose();
         }}
         requestId={request.id}
+      />
+
+      <ApproveWithChangesDialog
+        open={showApproveWithChangesDialog}
+        onOpenChange={setShowApproveWithChangesDialog}
+        onConfirm={(changes) => {
+          onApprove(request.id, true, changes);
+          setShowApproveWithChangesDialog(false);
+          onClose();
+        }}
+        requestId={request.id}
+        originalRequest={{
+          resourceName: request.item.name,
+          accessLevel: request.item.name.split(' • ')[1] || request.item.name,
+          duration: request.duration,
+          businessJustification: request.businessJustification
+        }}
       />
 
       {/* Delegate Dialog */}

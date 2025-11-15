@@ -4658,9 +4658,9 @@
   --text: #0f172a;
   --text-secondary: #475569;
   --muted: #94a3b8;
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --primary-dark: #4338ca;
+  --primary: #6b7cff;
+  --primary-light: #8a97ff;
+  --primary-dark: #525fcf;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
@@ -4776,9 +4776,9 @@
   --text: #f1f5f9;
   --text-secondary: #cbd5e1;
   --muted: #64748b;
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
+  --primary: #8a97ff;
+  --primary-light: #a6b0ff;
+  --primary-dark: #6b7cff;
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
@@ -4838,6 +4838,74 @@
 html {
   font-size: var(--font-size);
 }
+
+/* ============ UI Polishing Utilities ============ */
+/* Density toggle */
+body.app-density-compact [data-slot="button"] {
+  height: 36px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+body.app-density-compact [data-slot="input"],
+body.app-density-compact textarea[data-slot],
+body.app-density-compact select[data-slot] {
+  height: 36px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+body.app-density-compact [data-slot="table-head"] { height: 36px !important; }
+body.app-density-compact [data-slot="table-cell"] { padding-top: 6px !important; padding-bottom: 6px !important; }
+body.app-density-compact [data-slot="table-row"] { height: 44px !important; }
+
+/* Tables reverted to original styling (no zebra rows or sticky shadow) */
+
+/* Softer focus ring globally */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+/* Button and Card polish */
+.button-flat {
+  transition: background-color var(--transition-base), transform 120ms var(--ease-out), box-shadow var(--transition-base);
+}
+.button-flat:hover { background: color-mix(in oklab, var(--primary) 88%, white 12%); }
+.button-flat:active { transform: translateY(1px); }
+
+.card-elevate {
+  transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
+}
+.card-elevate:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--primary) 22%, var(--border));
+}
+
+/* Pill tabs */
+.tabs-pill [role="tab"] {
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+.tabs-pill [role="tab"][data-state="active"] {
+  background: color-mix(in oklab, var(--surface) 92%, white 8%);
+  border-color: color-mix(in oklab, var(--primary) 30%, var(--border));
+  color: var(--text);
+}
+
+/* Cell separators removed per request */
+
+/* Avatar ring */
+.avatar-ring {
+  outline: 2px solid color-mix(in oklab, var(--primary) 30%, transparent);
+  outline-offset: 2px;
+}
+
+/* Subtle scrollbars */
+*::-webkit-scrollbar { height: 8px; width: 8px; }
+*::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--muted-foreground) 25%, transparent); border-radius: 8px; }
+* { scrollbar-color: color-mix(in oklab, var(--muted-foreground) 25%, transparent) transparent; scrollbar-width: thin; }
 
 @keyframes fadeIn {
   from {

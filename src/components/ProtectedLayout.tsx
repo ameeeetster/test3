@@ -10,6 +10,12 @@ export function ProtectedLayout() {
 
   React.useEffect(() => {
     let mounted = true;
+    const devBypass = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true' && localStorage.getItem('devAuthed') === '1';
+    if (devBypass) {
+      setIsAuthed(true);
+      setLoading(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setIsAuthed(Boolean(data.session));

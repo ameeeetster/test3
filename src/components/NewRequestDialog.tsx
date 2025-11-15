@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -9,20 +9,28 @@ import { Calendar, AlertCircle, CheckCircle, Shield, ExternalLink, Loader2, Data
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'sonner';
 import { useApprovals } from '../contexts/ApprovalsContext';
+import { IdentityService } from '../services/identityService';
 
 interface NewRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock users for "Request on behalf of" (for administrators)
-const users = [
-  { value: 'sarah-chen', label: 'Sarah Chen', sublabel: 'Engineering • sarah.chen@company.com' },
-  { value: 'john-smith', label: 'John Smith', sublabel: 'Finance • john.smith@company.com' },
-  { value: 'emily-johnson', label: 'Emily Johnson', sublabel: 'Marketing • emily.johnson@company.com' },
-  { value: 'michael-brown', label: 'Michael Brown', sublabel: 'Sales • michael.brown@company.com' },
-  { value: 'jessica-davis', label: 'Jessica Davis', sublabel: 'HR • jessica.davis@company.com' },
-  { value: 'david-wilson', label: 'David Wilson', sublabel: 'Operations • david.wilson@company.com' }
+interface RequestableUser {
+  id: string;
+  name: string;
+  email: string;
+  department?: string | null;
+}
+
+// Fallback users shown if live directory lookup fails
+const fallbackUsers: RequestableUser[] = [
+  { id: 'mock-sarah-chen', name: 'Sarah Chen', email: 'sarah.chen@company.com', department: 'Engineering' },
+  { id: 'mock-john-smith', name: 'John Smith', email: 'john.smith@company.com', department: 'Finance' },
+  { id: 'mock-emily-johnson', name: 'Emily Johnson', email: 'emily.johnson@company.com', department: 'Marketing' },
+  { id: 'mock-michael-brown', name: 'Michael Brown', email: 'michael.brown@company.com', department: 'Sales' },
+  { id: 'mock-jessica-davis', name: 'Jessica Davis', email: 'jessica.davis@company.com', department: 'HR' },
+  { id: 'mock-david-wilson', name: 'David Wilson', email: 'david.wilson@company.com', department: 'Operations' },
 ];
 
 // Mock application data with icons and owners
@@ -117,7 +125,44 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
   const { user } = useUser();
   const { submitAccessRequest } = useApprovals();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestableUsers, setRequestableUsers] = useState<RequestableUser[]>(fallbackUsers);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersLoadError, setUsersLoadError] = useState<string | null>(null);
   
+  const loadDirectoryUsers = useCallback(async () => {
+    setUsersLoading(true);
+    setUsersLoadError(null);
+    try {
+      const identities = await IdentityService.getIdentities();
+      if (identities && identities.length > 0) {
+        const mapped: RequestableUser[] = identities
+          .filter(identity => Boolean(identity.email))
+          .map(identity => ({
+            id: identity.id,
+            name: identity.name || identity.email,
+            email: identity.email,
+            department: identity.department || identity.business_unit || identity.division || null,
+          }));
+        setRequestableUsers(mapped);
+      } else {
+        setUsersLoadError('No identities found in your directory. Showing sample users for now.');
+        setRequestableUsers(fallbackUsers);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load directory users for request dialog:', error);
+      setUsersLoadError('Unable to load identities from Supabase. Using sample users as a fallback.');
+      setRequestableUsers(fallbackUsers);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      loadDirectoryUsers();
+    }
+  }, [open, loadDirectoryUsers]);
+
   // Form state
   const [requestingFor, setRequestingFor] = useState('');
   const [application, setApplication] = useState('');
@@ -125,6 +170,16 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
   const [duration, setDuration] = useState('');
   const [justification, setJustification] = useState('');
   
+  const userOptions = requestableUsers
+    .map(userOption => ({
+      value: userOption.id,
+      label: userOption.name || userOption.email,
+      sublabel: userOption.department
+        ? `${userOption.department} • ${userOption.email}`
+        : userOption.email,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
   // Check if user is admin
   const isAdmin = user?.role === 'administrator';
   
@@ -203,30 +258,42 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Push to approvals context
-    const selectedUser = users.find(u => u.value === requestingFor);
-    const requesterName = isAdmin ? (selectedUser?.label || 'Selected User') : (user?.name || 'Current User');
-    const requesterEmail = isAdmin ? ((selectedUser?.sublabel.split('•')[1] || '').trim() || 'user@example.com') : (user?.email || 'user@example.com');
-    const requesterDept = isAdmin ? ((selectedUser?.sublabel.split('•')[0] || '').trim() || 'General') : (user?.department || 'General');
+    const selectedUser = requestableUsers.find(u => u.id === requestingFor);
+    const currentUserIdentity = requestableUsers.find(
+      u => u.email.toLowerCase() === (user?.email || '').toLowerCase()
+    );
+    const requesterName = isAdmin ? (selectedUser?.name || 'Selected User') : (user?.name || currentUserIdentity?.name || 'Current User');
+    const requesterEmail = isAdmin ? (selectedUser?.email || 'user@example.com') : (user?.email || currentUserIdentity?.email || 'user@example.com');
+    const requesterDept = isAdmin ? (selectedUser?.department || 'General') : (user?.department || currentUserIdentity?.department || 'General');
+    const forUserId = isAdmin ? (selectedUser?.id || null) : (currentUserIdentity?.id || user?.id || null);
     const appLabel = applications.find(a => a.value === application)?.label || application;
     const levelLabel = selectedAccessLevel?.label || accessLevel;
     const riskMap: Record<string, 'Low' | 'Medium' | 'High'> = { low: 'Low', medium: 'Medium', high: 'High' };
 
-    submitAccessRequest({
-      requester: { name: requesterName, email: requesterEmail, department: requesterDept },
-      item: { name: `${appLabel} • ${levelLabel}`, type: 'Application' },
-      risk: riskMap[selectedAccessLevel?.risk || 'low'],
-      businessJustification: justification.trim(),
-      duration: duration || undefined,
-      sodConflicts: selectedAccessLevel?.sodConflict ? 1 : 0,
-    });
-    
-    setIsSubmitting(false);
-    
-    toast.success('Access request submitted successfully', {
-      description: 'Your request has been sent for approval'
-    });
-    
-    onOpenChange(false);
+    try {
+      await submitAccessRequest({
+        requester: { name: requesterName, email: requesterEmail, department: requesterDept },
+        item: { name: `${appLabel} • ${levelLabel}`, type: 'Application' },
+        risk: riskMap[selectedAccessLevel?.risk || 'low'],
+        businessJustification: justification.trim(),
+        duration: duration || undefined,
+        sodConflicts: selectedAccessLevel?.sodConflict ? 1 : 0,
+        forUserId,
+      });
+      
+      toast.success('Access request submitted successfully', {
+        description: 'Your request has been sent for approval'
+      });
+      
+      onOpenChange(false);
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Request submission encountered an issue';
+      toast.error('Failed to submit request', {
+        description: errorMessage
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleBlur = (field: string) => {
@@ -245,7 +312,7 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
     }
   };
   
-  const isFormValid = (!isAdmin || requestingFor) && application && accessLevel && justification.trim().length >= 20;
+  const isFormValid = (!isAdmin || requestingFor) && application && accessLevel && justification.trim().length >= 20 && !usersLoading;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -319,17 +386,28 @@ export function NewRequestDialog({ open, onOpenChange }: NewRequestDialogProps) 
                     id="requesting-for"
                     label="Requesting for"
                     required
-                    placeholder="Select a user..."
+                    placeholder={usersLoading ? 'Loading users...' : 'Select a user...'}
                     searchPlaceholder="Search users..."
-                    emptyText="No users found."
-                    options={users}
+                    emptyText={
+                      usersLoading
+                        ? 'Loading users...'
+                        : userOptions.length === 0
+                        ? 'No users available.'
+                        : usersLoadError ?? 'No users found.'
+                    }
+                    options={userOptions}
                     value={requestingFor}
                     onChange={(val) => {
                       setRequestingFor(val);
                       handleChange('requestingFor', val);
                     }}
                     error={touched.requestingFor ? errors.requestingFor : undefined}
-                    helperText="Select the user you are requesting access for"
+                    helperText={
+                      usersLoadError
+                        ? usersLoadError
+                        : 'Select the user you are requesting access for'
+                    }
+                    disabled={usersLoading}
                   />
                 ) : (
                   <FormInput

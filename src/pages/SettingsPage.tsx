@@ -27,6 +27,12 @@ import { AuthenticationTab } from './settings/AuthenticationTab';
 export function SettingsPage() {
   // State management for all settings
   const [settings, setSettings] = React.useState({
+    // Appearance
+    appearance: {
+      compactDensity: false,
+      reducedMotion: false,
+      highContrast: false,
+    },
     // Organization & Governance
     organization: {
       name: "Acme Corporation",
@@ -348,6 +354,13 @@ export function SettingsPage() {
       } catch (error) {
         console.error('Failed to load settings:', error);
       }
+    }
+    // Apply density from storage (global)
+    const savedDensity = localStorage.getItem('app-density');
+    if (savedDensity === 'compact') {
+      document.body.classList.add('app-density-compact');
+    } else {
+      document.body.classList.remove('app-density-compact');
     }
   }, []);
 
@@ -1653,6 +1666,49 @@ export function SettingsPage() {
           {/* System Administration Tab */}
           <TabsContent value="system" className="p-8">
             <div className="space-y-6">
+              {/* Appearance */}
+              <div>
+                <h3 className="mb-6" style={{ 
+                  fontSize: 'var(--text-xl)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: 'var(--text)'
+                }}>
+                  Appearance
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between p-4 rounded-lg" style={{ 
+                    backgroundColor: 'var(--background)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <div>
+                      <div style={{ 
+                        fontSize: 'var(--text-body)',
+                        fontWeight: 'var(--font-weight-medium)',
+                        color: 'var(--text)',
+                        marginBottom: '4px'
+                      }}>
+                        Compact Density
+                      </div>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--muted-foreground)' }}>
+                        Reduce paddings and row heights to fit more content on screen
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={settings.appearance.compactDensity}
+                      onCheckedChange={(checked) => {
+                        updateSetting('appearance.compactDensity', checked);
+                        if (checked) {
+                          document.body.classList.add('app-density-compact');
+                          localStorage.setItem('app-density', 'compact');
+                        } else {
+                          document.body.classList.remove('app-density-compact');
+                          localStorage.setItem('app-density', 'comfortable');
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
               <div>
                 <h3 className="mb-6" style={{ 
                   fontSize: 'var(--text-xl)',

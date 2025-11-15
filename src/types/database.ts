@@ -170,11 +170,40 @@ export interface AccessRequest {
   rejected_at?: Timestamp;
   completed_at?: Timestamp;
   cancelled_at?: Timestamp;
+  provisioning_status: ProvisioningStatus;
+  provisioning_started_at?: Timestamp;
+  provisioning_completed_at?: Timestamp;
+  provisioning_error?: string;
+  provisioning_metadata: Record<string, any>;
   correlation_id?: UUID;
   created_at: Timestamp;
   updated_at: Timestamp;
   created_by?: UUID;
   updated_by?: UUID;
+}
+
+export type ProvisioningStatus =
+  | 'not_started'
+  | 'pending'
+  | 'in_progress'
+  | 'succeeded'
+  | 'failed'
+  | 'skipped';
+
+export interface ProvisioningJob {
+  id: UUID;
+  request_id: UUID;
+  organization_id?: UUID;
+  target_system?: string;
+  connector_id?: UUID;
+  status: 'pending' | 'in_progress' | 'succeeded' | 'failed' | 'skipped';
+  attempts: number;
+  started_at?: Timestamp;
+  completed_at?: Timestamp;
+  error?: string;
+  metadata: Record<string, any>;
+  created_at: Timestamp;
+  updated_at: Timestamp;
 }
 
 // JML Request
@@ -301,6 +330,11 @@ export interface Database {
         Row: AccessRequest;
         Insert: Omit<AccessRequest, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<AccessRequest, 'id' | 'created_at'>>;
+      };
+      provisioning_jobs: {
+        Row: ProvisioningJob;
+        Insert: Omit<ProvisioningJob, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<ProvisioningJob, 'id' | 'created_at'>>;
       };
       jml_requests: {
         Row: JmlRequest;

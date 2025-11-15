@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Filter, Plus, Download, Lock, XCircle, FileCheck, X, User, Mail, Phone, Building, Calendar, Shield, Key } from 'lucide-react';
+import { Search, Filter, Plus, Download, Lock, XCircle, FileCheck, X, User, Mail, Phone, Building, Calendar, Shield, Key, Table2, Network } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 
 import { FilterChip } from '../components/FilterChip';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import { IdentitiesDataTable, Identity } from '../components/IdentitiesDataTable';
 import { IdentityDetailDrawer } from '../components/IdentityDetailDrawer';
+import { OrgChart } from '../components/OrgChart';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { Label } from '../components/ui/label';
@@ -147,6 +149,7 @@ export function EnhancedIdentitiesPage() {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [identities, setIdentities] = useState<Identity[]>(identitiesData);
+  const [viewMode, setViewMode] = useState<'table' | 'orgchart'>('table');
   
   // User creation dialog state
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
@@ -337,8 +340,29 @@ export function EnhancedIdentitiesPage() {
           
       // Map database identities to display format
       // Use database fields first, fallback to defaults
+      // Build a quick lookup map for manager names/emails
+      const managerInfoMap = new Map<string, { name: string; email?: string }>();
+      dbIdentities.forEach(dbIdentity => {
+        const displayName =
+          dbIdentity.name ||
+          [dbIdentity.first_name, dbIdentity.last_name].filter(Boolean).join(' ') ||
+          dbIdentity.email;
+        managerInfoMap.set(dbIdentity.id, {
+          name: displayName,
+          email: dbIdentity.email,
+        });
+      });
+
       const mappedDbIdentities = dbIdentities.map(dbIdentity => {
         const mockMatch = identitiesData.find(m => m.email === dbIdentity.email);
+        const managerInfo = dbIdentity.manager_id
+          ? managerInfoMap.get(dbIdentity.manager_id)
+          : undefined;
+        const managerName =
+          managerInfo?.name ||
+          mockMatch?.manager ||
+          (dbIdentity.manager_id ? 'Manager not found' : 'Not assigned');
+        const managerEmail = managerInfo?.email;
         // Capitalize status to match display format
         const statusCapitalized = dbIdentity.status 
           ? dbIdentity.status.charAt(0).toUpperCase() + dbIdentity.status.slice(1).toLowerCase()
@@ -360,7 +384,9 @@ export function EnhancedIdentitiesPage() {
           email: dbIdentity.email,
           // Use database department if available, otherwise mock or default
           department: dbIdentity.department || mockMatch?.department || 'Unknown',
-          manager: mockMatch?.manager || '', // TODO: Look up manager by manager_id
+          manager: managerName,
+          managerId: dbIdentity.manager_id || undefined,
+          managerEmail,
           status: statusCapitalized as 'Active' | 'Inactive' | 'Disabled' | 'Pending',
           risk: riskCapitalized as 'Critical' | 'High' | 'Medium' | 'Low',
           roles: mockMatch?.roles || 0,
@@ -686,6 +712,13 @@ export function EnhancedIdentitiesPage() {
   return (
     <div className="p-4 lg:p-6 max-w-[1440px] mx-auto">
       <div className="mb-6">
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Identities' },
+          ]}
+          className="mb-2"
+        />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h1 style={{ 
             fontSize: 'var(--text-display)',
@@ -743,6 +776,36 @@ export function EnhancedIdentitiesPage() {
                 </Badge>
               )}
             </Button>
+            <div style={{ display: 'flex', gap: '4px', border: '1px solid var(--border)', borderRadius: '6px', padding: '2px' }}>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                style={{
+                  fontSize: '12px',
+                  height: '32px',
+                  paddingLeft: '12px',
+                  paddingRight: '12px'
+                }}
+              >
+                <Table2 className="w-3.5 h-3.5 mr-1.5" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === 'orgchart' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('orgchart')}
+                style={{
+                  fontSize: '12px',
+                  height: '32px',
+                  paddingLeft: '12px',
+                  paddingRight: '12px'
+                }}
+              >
+                <Network className="w-3.5 h-3.5 mr-1.5" />
+                Org Chart
+              </Button>
+            </div>
             <Button variant="outline" className="gap-2">
               <Download className="w-4 h-4" />
               Export
@@ -777,7 +840,7 @@ export function EnhancedIdentitiesPage() {
           {/* Bulk Actions */}
           {selectedIds.size > 0 && (
             <div 
-              className="flex items-center justify-between p-3 rounded-lg border transition-all duration-150"
+              className="flex items-center justify-between p-3 rounded-lg border transition-all duration-150 sticky bottom-0 z-10"
               style={{
                 backgroundColor: 'var(--info-bg)',
                 borderColor: 'var(--info-border)'
@@ -836,15 +899,31 @@ export function EnhancedIdentitiesPage() {
         </div>
       </div>
 
-      {/* Data Table */}
-      <IdentitiesDataTable
-        data={filteredIdentities}
-        selectedIds={selectedIds}
-        onSelectAll={handleSelectAll}
-        onSelectRow={handleSelectRow}
-        onRowClick={handleUserSelect}
-        isLoading={isLoading}
-      />
+      {/* Data Table or Org Chart */}
+      {viewMode === 'table' ? (
+        <IdentitiesDataTable
+          data={filteredIdentities}
+          selectedIds={selectedIds}
+          onSelectAll={handleSelectAll}
+          onSelectRow={handleSelectRow}
+          onRowClick={handleUserSelect}
+          isLoading={isLoading}
+        />
+      ) : (
+        <div style={{ 
+          minHeight: '600px',
+          backgroundColor: 'var(--background)',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+          padding: '20px'
+        }}>
+          <OrgChart
+            identities={filteredIdentities}
+            onNodeClick={handleUserSelect}
+            selectedId={selectedUser?.id}
+          />
+        </div>
+      )}
 
       {/* Filter Dialog */}
       <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { SectionCard } from '../../components/settings/SectionCard';
@@ -12,18 +12,15 @@ import { DiffDrawer } from '../../components/settings/DiffDrawer';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Shield, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, CirclePlay as PlayCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { SSOService, type SSOProvider } from '../../services/ssoService';
 
 interface AuthenticationTabProps {
   onFieldChange: () => void;
 }
 
 export function AuthenticationTab({ onFieldChange }: AuthenticationTabProps) {
-  const [providers, setProviders] = useState([
-    { id: 'saml', name: 'SAML', status: 'configured' as const, lastTest: '2h ago', signIns: 134 },
-    { id: 'azure', name: 'Azure AD', status: 'configured' as const, lastTest: '1h ago', signIns: 89 },
-    { id: 'okta', name: 'Okta', status: 'not-configured' as const },
-    { id: 'google', name: 'Google Workspace', status: 'disabled' as const, lastTest: '3d ago', signIns: 0 }
-  ]);
+  const [providers, setProviders] = useState<SSOProvider[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
@@ -51,8 +48,31 @@ export function AuthenticationTab({ onFieldChange }: AuthenticationTabProps) {
     { timestamp: '1 week ago', actor: 'michael.chen@acme.com', field: 'Password Min Length', oldValue: '8', newValue: '12' }
   ];
 
+  // Load providers on mount
+  useEffect(() => {
+    loadProviders();
+  }, []);
+
+  const loadProviders = async () => {
+    setLoading(true);
+    try {
+      const loadedProviders = await SSOService.getProviders();
+      setProviders(loadedProviders);
+    } catch (error) {
+      console.error('Error loading providers:', error);
+      // Keep empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddProvider = () => {
     setTemplatePickerOpen(true);
+  };
+
+  const handleProviderSaved = () => {
+    loadProviders();
+    onFieldChange();
   };
 
   const handleSelectTemplate = (template: string) => {
@@ -116,25 +136,38 @@ export function AuthenticationTab({ onFieldChange }: AuthenticationTabProps) {
           </Button>
         }
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {providers.map(provider => (
-            <ProviderTile
-              key={provider.id}
-              name={provider.name}
-              status={provider.status}
-              lastTest={provider.lastTest}
-              signIns={provider.signIns}
-              onConfigure={() => {
-                setSelectedProvider(provider.name);
-                setWizardOpen(true);
-              }}
-              onTest={() => toast.info(`Testing ${provider.name}...`)}
-              onRotateSecret={handleRotateSecret}
-              onDisable={() => handleDisableProvider(provider.id)}
-              onHistory={() => setHistoryDrawerOpen(true)}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2].map(i => (
+              <ProviderTileSkeleton key={i} />
+            ))}
+          </div>
+        ) : providers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No SSO providers configured yet.</p>
+            <p className="text-sm mt-2">Click "Add Provider" to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {providers.map(provider => (
+              <ProviderTile
+                key={provider.id}
+                name={provider.name}
+                status={provider.status}
+                lastTest={provider.lastTest}
+                signIns={provider.signIns}
+                onConfigure={() => {
+                  setSelectedProvider(provider.name);
+                  setWizardOpen(true);
+                }}
+                onTest={() => toast.info(`Testing ${provider.name}...`)}
+                onRotateSecret={handleRotateSecret}
+                onDisable={() => handleDisableProvider(provider.id)}
+                onHistory={() => setHistoryDrawerOpen(true)}
+              />
+            ))}
+          </div>
+        )}
         <CardMetadata
           user="Sarah Johnson"
           timestamp="2 days ago"
@@ -274,6 +307,7 @@ export function AuthenticationTab({ onFieldChange }: AuthenticationTabProps) {
         onOpenChange={setWizardOpen}
         provider={selectedProvider}
         mode="create"
+        onSuccess={handleProviderSaved}
       />
 
       <DiffDrawer

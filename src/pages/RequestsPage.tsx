@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, Eye, AlertTriangle, Clock, CheckCircle2, XCircle, ChevronRight, Calendar, Building2, Shield, User, X, TrendingUp, Users, Activity } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -25,76 +25,9 @@ import { DecisionBar } from '../components/DecisionBar';
 import { ConflictsModal } from '../components/ConflictsModal';
 import { RejectionDialog } from '../components/RejectionDialog';
 import { toast } from 'sonner';
-
-const requests = [
-  {
-    id: 'REQ-001',
-    user: 'Jessica Smith',
-    department: 'Finance',
-    resource: 'Oracle ERP - Accounts Payable Read',
-    status: 'Pending',
-    risk: 'High',
-    submitted: '2025-09-29T14:30:00',
-    sodHits: 2,
-    justification: 'Need access to process quarterly financial reports and reconciliation tasks for Q4 fiscal closing period.',
-    approver: 'Michael Chen'
-  },
-  {
-    id: 'REQ-002',
-    user: 'Raj Kumar',
-    department: 'IT Operations',
-    resource: 'SharePoint Finance Site - Editors',
-    status: 'Pending',
-    risk: 'Medium',
-    submitted: '2025-09-29T11:15:00',
-    sodHits: 0,
-    justification: 'Required to maintain and update financial documentation for quarterly reports.',
-    approver: 'Sarah Johnson'
-  },
-  {
-    id: 'REQ-003',
-    user: 'Maria Chen',
-    department: 'Sales',
-    resource: 'Salesforce - System Administrator',
-    status: 'In Progress',
-    risk: 'Low',
-    submitted: '2025-09-28T16:45:00',
-    sodHits: 0,
-    justification: 'Promoted to Sales Operations Manager role. Need admin access to configure workflows.',
-    approver: 'David Park'
-  },
-  {
-    id: 'REQ-004',
-    user: 'Alex Johnson',
-    department: 'Human Resources',
-    resource: 'Workday - HR Business Partner',
-    status: 'Approved',
-    risk: 'Low',
-    submitted: '2025-09-27T09:20:00',
-    sodHits: 0,
-    justification: 'New HRBP role requires access to employee records for assigned business units.',
-    approver: 'Lisa Anderson'
-  },
-  {
-    id: 'REQ-005',
-    user: 'Sam Patel',
-    department: 'Finance',
-    resource: 'AWS Production - Admin Console',
-    status: 'Rejected',
-    risk: 'High',
-    submitted: '2025-09-26T13:10:00',
-    sodHits: 1,
-    justification: 'Need production access to troubleshoot billing integration issues.',
-    approver: 'Michael Chen'
-  },
-];
-
-const stats = [
-  { label: 'Total Requests', value: '156', change: '+12 this week', icon: Calendar, color: '#4F46E5' },
-  { label: 'Pending Approval', value: '24', change: '3 require attention', icon: Clock, color: '#F59E0B' },
-  { label: 'High Risk', value: '7', change: '+2 today', icon: AlertTriangle, color: '#EF4444' },
-  { label: 'Avg. Approval Time', value: '4.2h', change: '−15% vs last month', icon: CheckCircle2, color: '#10B981' },
-];
+import { useApprovals } from '../contexts/ApprovalsContext';
+import { EmptyState } from '../components/EmptyState';
+import { TableSkeleton } from '../components/skeletons/TableSkeleton';
 
 // Mock SoD conflicts data
 const sodConflicts: Record<string, Array<{ id: string; conflictingAccess: string; reason: string; policy: string; policyLink?: string }>> = {
@@ -184,9 +117,167 @@ const applicationsData = {
   },
 };
 
+const PROVISIONING_STATUS_META: Record<
+  'not_started' | 'pending' | 'in_progress' | 'succeeded' | 'failed' | 'skipped',
+  { label: string; description: string; bg: string; color: string; border: string }
+> = {
+  not_started: {
+    label: 'Not started',
+    description: 'Waiting for approval before provisioning kicks off',
+    bg: 'var(--surface)',
+    color: 'var(--muted-foreground)',
+    border: 'var(--border)',
+  },
+  pending: {
+    label: 'Queued',
+    description: 'Job queued and waiting for connector capacity',
+    bg: 'var(--warning-bg)',
+    color: 'var(--warning)',
+    border: 'var(--warning-border)',
+  },
+  in_progress: {
+    label: 'Provisioning',
+    description: 'Connector is actively creating or updating access',
+    bg: 'var(--info-bg)',
+    color: 'var(--info)',
+    border: 'var(--info-border)',
+  },
+  succeeded: {
+    label: 'Provisioned',
+    description: 'Access granted and provisioning completed successfully',
+    bg: 'var(--success-bg)',
+    color: 'var(--success)',
+    border: 'var(--success-border)',
+  },
+  failed: {
+    label: 'Failed',
+    description: 'Connector returned an error – requires manual review',
+    bg: 'var(--danger-bg)',
+    color: 'var(--danger)',
+    border: 'var(--danger-border)',
+  },
+  skipped: {
+    label: 'Skipped',
+    description: 'Provisioning not required (rejected or canceled)',
+    bg: 'var(--surface)',
+    color: 'var(--muted-foreground)',
+    border: 'var(--border)',
+  },
+};
+type ProvisioningStateKey = keyof typeof PROVISIONING_STATUS_META;
+
 export function RequestsPage() {
   const navigate = useNavigate();
-  const [selectedRequest, setSelectedRequest] = useState<typeof requests[0] | null>(null);
+  const { requests: approvalsRequests, updateStatus, syncLocalToDb } = useApprovals();
+  const provisioningMetaFor = (status?: string | null) =>
+    PROVISIONING_STATUS_META[(status as ProvisioningStateKey) ?? 'not_started'] ?? PROVISIONING_STATUS_META.not_started;
+  const formatProvisioningTimestamp = (value?: string | null) =>
+    value
+      ? new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+      : '—';
+  const [bootLoading, setBootLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setBootLoading(false), 300);
+    return () => clearTimeout(t);
+  }, []);
+  const metrics = useMemo(() => {
+    const dataset = approvalsRequests;
+    const total = dataset.length;
+    const now = new Date();
+    const msInDay = 1000 * 60 * 60 * 24;
+
+    const inLast7Days = dataset.filter(r => {
+      const submitted = new Date(r.submittedAt);
+      if (Number.isNaN(submitted.getTime())) return false;
+      return (now.getTime() - submitted.getTime()) / msInDay <= 7;
+    }).length;
+
+    const pendingCount = dataset.filter(r => r.status === 'Pending').length;
+    const highRiskCount = dataset.filter(r => r.risk === 'High' || r.risk === 'Critical').length;
+    const provisioningInFlight = dataset.filter(r => {
+      const state = (r.provisioningStatus ?? 'not_started') as string;
+      return state === 'pending' || state === 'in_progress';
+    }).length;
+
+    const approvalDurationsMs = dataset
+      .filter(r => r.status === 'Approved' && r.approvedAt)
+      .map(r => {
+        const approved = new Date(r.approvedAt as string);
+        const submitted = new Date(r.submittedAt);
+        if (Number.isNaN(approved.getTime()) || Number.isNaN(submitted.getTime())) return null;
+        const diff = approved.getTime() - submitted.getTime();
+        return diff >= 0 ? diff : null;
+      })
+      .filter((ms): ms is number => ms !== null);
+
+    const avgApprovalHours = approvalDurationsMs.length
+      ? approvalDurationsMs.reduce((sum, ms) => sum + ms, 0) / approvalDurationsMs.length / (1000 * 60 * 60)
+      : null;
+
+    const avgApprovalDisplay = avgApprovalHours !== null
+      ? `${avgApprovalHours >= 10 ? avgApprovalHours.toFixed(0) : avgApprovalHours.toFixed(1)}h`
+      : '—';
+
+    return [
+      {
+        label: 'Total Requests',
+        value: total.toString(),
+        change: total ? `${inLast7Days} in last 7 days` : 'No requests yet',
+        icon: Calendar,
+        color: '#4F46E5',
+      },
+      {
+        label: 'Pending Approval',
+        value: pendingCount.toString(),
+        change: pendingCount ? `${pendingCount} awaiting action` : 'All caught up',
+        icon: Clock,
+        color: '#F59E0B',
+      },
+      {
+        label: 'High Risk',
+        value: highRiskCount.toString(),
+        change: highRiskCount ? `${highRiskCount} flagged` : 'No high-risk requests',
+        icon: AlertTriangle,
+        color: '#EF4444',
+      },
+      {
+        label: 'Provisioning',
+        value: provisioningInFlight.toString(),
+        change: provisioningInFlight ? 'Jobs running now' : 'No active jobs',
+        icon: Activity,
+        color: '#0EA5E9',
+      },
+      {
+        label: 'Avg. Approval Time',
+        value: avgApprovalDisplay,
+        change: approvalDurationsMs.length ? `${approvalDurationsMs.length} approvals measured` : 'Waiting for approvals',
+        icon: CheckCircle2,
+        color: '#10B981',
+      },
+    ];
+  }, [approvalsRequests]);
+  const dynamicRequests = useMemo(() => approvalsRequests.map(r => ({
+    id: r.id,
+    user: r.requester.name,
+    department: r.requester.department,
+    resource: r.item.name,
+    status: r.status,
+    risk: r.risk,
+    submitted: r.submittedAt,
+    sodHits: r.sodConflicts ?? 0,
+    justification: r.businessJustification,
+    approver: '—',
+    forUserId: r.forUserId,
+    provisioningStatus: r.provisioningStatus ?? 'not_started',
+    provisioningStartedAt: r.provisioningStartedAt ?? null,
+    provisioningCompletedAt: r.provisioningCompletedAt ?? null,
+    provisioningError: r.provisioningError ?? null,
+  })), [approvalsRequests]);
+
+  // Use only live database-backed requests to avoid non-persistent mock rows
+  const combinedRequests = useMemo(() => [...dynamicRequests], [dynamicRequests]);
+
+  const [selectedRequest, setSelectedRequest] = useState<typeof combinedRequests[0] | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -198,12 +289,59 @@ export function RequestsPage() {
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [riskFilters, setRiskFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
+  const [savedViews, setSavedViews] = useState<Array<{ name: string; state: any }>>([]);
+  const [selectedView, setSelectedView] = useState<string>('');
+  useEffect(() => {
+    const raw = localStorage.getItem('views:requests');
+    if (raw) {
+      try { setSavedViews(JSON.parse(raw)); } catch {}
+    }
+  }, []);
+  const saveCurrentView = () => {
+    const name = window.prompt('Save view as:');
+    if (!name) return;
+    const state = {
+      activeTab,
+      searchQuery,
+      statusFilters,
+      riskFilters,
+      departmentFilters,
+    };
+    const existing = savedViews.filter(v => v.name !== name);
+    const next = [...existing, { name, state }];
+    setSavedViews(next);
+    localStorage.setItem('views:requests', JSON.stringify(next));
+    setSelectedView(name);
+    toast.success('View saved');
+  };
+  const applyView = (name: string) => {
+    setSelectedView(name);
+    const v = savedViews.find(v => v.name === name);
+    if (!v) return;
+    setActiveTab(v.state.activeTab || 'all');
+    setSearchQuery(v.state.searchQuery || '');
+    setStatusFilters(v.state.statusFilters || []);
+    setRiskFilters(v.state.riskFilters || []);
+    setDepartmentFilters(v.state.departmentFilters || []);
+  };
+  const deleteView = () => {
+    if (!selectedView) return;
+    const next = savedViews.filter(v => v.name !== selectedView);
+    setSavedViews(next);
+    localStorage.setItem('views:requests', JSON.stringify(next));
+    setSelectedView('');
+    toast.message('View deleted');
+  };
 
   const filteredRequests = useMemo(() => {
-    return requests.filter(request => {
+    return combinedRequests.filter(request => {
       // Tab filters
       if (activeTab === 'pending' && request.status !== 'Pending') return false;
-      if (activeTab === 'in-progress' && request.status !== 'In Progress') return false;
+      if (activeTab === 'in-progress') {
+        const provisioningState = (request.provisioningStatus ?? 'not_started') as string;
+        if (provisioningState !== 'pending' && provisioningState !== 'in_progress') return false;
+      }
+      if (activeTab === 'approved' && request.status !== 'Approved') return false;
       if (activeTab === 'high-risk' && request.risk !== 'High') return false;
       
       // Status filters
@@ -228,7 +366,7 @@ export function RequestsPage() {
       
       return true;
     });
-  }, [activeTab, searchQuery, statusFilters, riskFilters, departmentFilters]);
+  }, [combinedRequests, activeTab, searchQuery, statusFilters, riskFilters, departmentFilters]);
 
   const activeFiltersCount = statusFilters.length + riskFilters.length + departmentFilters.length;
 
@@ -260,27 +398,23 @@ export function RequestsPage() {
     setDepartmentFilters([]);
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (selectedRequest) {
+      await updateStatus(selectedRequest.id, 'Approved');
       toast.success('Request Approved', {
         description: `${selectedRequest.id} has been approved successfully.`,
-        action: {
-          label: 'View Audit Trail',
-          onClick: () => console.log('View audit trail')
-        }
+        action: { label: 'View Audit Trail', onClick: () => console.log('View audit trail') }
       });
       setSelectedRequest(null);
     }
   };
 
-  const handleReject = (reason: string) => {
+  const handleReject = async (reason: string) => {
     if (selectedRequest) {
+      await updateStatus(selectedRequest.id, 'Rejected');
       toast.error('Request Rejected', {
         description: `${selectedRequest.id} has been rejected. Reason: ${reason}`,
-        action: {
-          label: 'View Audit Trail',
-          onClick: () => console.log('View audit trail')
-        }
+        action: { label: 'View Audit Trail', onClick: () => console.log('View audit trail') }
       });
       setSelectedRequest(null);
     }
@@ -334,11 +468,12 @@ export function RequestsPage() {
 
           {/* Stats Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            {stats.map((stat, index) => {
+            {metrics.map((stat, index) => {
               const Icon = stat.icon;
               return (
                 <Card 
                   key={index}
+                  className="card-elevate"
                   style={{ 
                     backgroundColor: 'var(--card)',
                     border: '1px solid var(--border)',
@@ -373,13 +508,14 @@ export function RequestsPage() {
           </div>
 
           {/* Filters */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList style={{ backgroundColor: 'var(--accent)', padding: '4px', borderRadius: '10px', height: '40px' }}>
-                <TabsTrigger value="all" style={{ borderRadius: '8px', fontSize: '13px' }}>All Requests</TabsTrigger>
-                <TabsTrigger value="pending" style={{ borderRadius: '8px', fontSize: '13px' }}>Pending</TabsTrigger>
-                <TabsTrigger value="in-progress" style={{ borderRadius: '8px', fontSize: '13px' }}>In Progress</TabsTrigger>
-                <TabsTrigger value="high-risk" style={{ borderRadius: '8px', fontSize: '13px' }}>High Risk</TabsTrigger>
+              <TabsList className="tabs-pill" style={{ backgroundColor: 'transparent', padding: '4px', height: '40px' }}>
+                <TabsTrigger value="all" style={{ fontSize: '13px' }}>All Requests</TabsTrigger>
+                <TabsTrigger value="pending" style={{ fontSize: '13px' }}>Pending</TabsTrigger>
+                <TabsTrigger value="in-progress" style={{ fontSize: '13px' }}>In Progress</TabsTrigger>
+                <TabsTrigger value="approved" style={{ fontSize: '13px' }}>Approved</TabsTrigger>
+                <TabsTrigger value="high-risk" style={{ fontSize: '13px' }}>High Risk</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -432,6 +568,44 @@ export function RequestsPage() {
                 </span>
               )}
             </Button>
+
+            {/* Saved Views */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                value={selectedView}
+                onChange={(e) => applyView(e.target.value)}
+                className="h-10 rounded-md border px-3 text-sm"
+                style={{ backgroundColor: 'var(--input-background)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              >
+                <option value="">Saved views…</option>
+                {savedViews.map(v => (
+                  <option key={v.name} value={v.name}>{v.name}</option>
+                ))}
+              </select>
+              <Button variant="outline" size="sm" onClick={saveCurrentView} className="h-10">
+                Save view
+              </Button>
+              <Button variant="ghost" size="sm" onClick={deleteView} className="h-10">
+                Delete
+              </Button>
+            </div>
+
+            {approvalsRequests.some(r => r.id.startsWith('REQ-LOCAL-')) && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const { migrated } = await syncLocalToDb();
+                  if (migrated > 0) {
+                    toast.success('Synced to database', { description: `${migrated} local request${migrated>1?'s':''} persisted.` });
+                  } else {
+                    toast.message('No local requests to sync');
+                  }
+                }}
+                style={{ height: '40px', borderRadius: '10px', fontSize: '13px' }}
+              >
+                Sync local requests
+              </Button>
+            )}
           </div>
         </div>
 
@@ -443,6 +617,20 @@ export function RequestsPage() {
           overflow: 'hidden'
         }}>
           <div style={{ overflowX: 'auto' }}>
+            {bootLoading ? (
+              <div className="p-4">
+                <TableSkeleton rows={8} columns={8} />
+              </div>
+            ) : combinedRequests.length === 0 ? (
+              <div className="p-8">
+                <EmptyState
+                  title="No requests yet"
+                  description="Create your first access request to get started or adjust your filters."
+                  actionLabel="New Request"
+                  onAction={() => setShowCreateDialog(true)}
+                />
+              </div>
+            ) : null}
             <Table>
               <TableHeader style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
                 <TableRow>
@@ -450,6 +638,7 @@ export function RequestsPage() {
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Requestor</TableHead>
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Resource</TableHead>
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Status</TableHead>
+                <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Provisioning</TableHead>
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Risk</TableHead>
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Submitted</TableHead>
                   <TableHead style={{ height: '48px', color: 'var(--muted-foreground)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', textAlign: 'right' }}>Actions</TableHead>
@@ -528,6 +717,27 @@ export function RequestsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {(() => {
+                        const meta = provisioningMetaFor(request.provisioningStatus);
+                        return (
+                          <Badge
+                            style={{
+                              backgroundColor: meta.bg,
+                              color: meta.color,
+                              border: `1px solid ${meta.border}`,
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              textTransform: 'none',
+                            }}
+                          >
+                            {meta.label}
+                          </Badge>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>
                       <Badge style={{ 
                         backgroundColor: request.risk === 'High' ? 'var(--danger-bg)' : request.risk === 'Medium' ? 'var(--warning-bg)' : 'var(--success-bg)',
                         color: request.risk === 'High' ? 'var(--danger)' : request.risk === 'Medium' ? 'var(--warning)' : 'var(--success)',
@@ -590,7 +800,7 @@ export function RequestsPage() {
               backgroundColor: 'var(--surface)'
             }}>
               <div style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}>
-                Showing <span style={{ fontWeight: '500', color: 'var(--text)' }}>{filteredRequests.length}</span> of <span style={{ fontWeight: '500', color: 'var(--text)' }}>{requests.length}</span> requests
+                Showing <span style={{ fontWeight: '500', color: 'var(--text)' }}>{filteredRequests.length}</span> of <span style={{ fontWeight: '500', color: 'var(--text)' }}>{combinedRequests.length}</span> requests
               </div>
             </div>
           )}
@@ -845,6 +1055,90 @@ export function RequestsPage() {
 
                   {/* Right Rail */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Provisioning summary */}
+                  <Card style={{ 
+                    padding: '16px', 
+                    backgroundColor: 'var(--card)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '10px',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <h3 style={{ 
+                      fontSize: '13px', 
+                      fontWeight: '600', 
+                      color: 'var(--muted-foreground)', 
+                      marginBottom: '12px', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.05em' 
+                    }}>
+                      Provisioning Status
+                    </h3>
+                    {(() => {
+                      const meta = provisioningMetaFor(selectedRequest.provisioningStatus);
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                            <Badge
+                              style={{
+                                backgroundColor: meta.bg,
+                                color: meta.color,
+                                border: `1px solid ${meta.border}`,
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                padding: '4px 12px',
+                                borderRadius: '999px',
+                                textTransform: 'none',
+                              }}
+                            >
+                              {meta.label}
+                            </Badge>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              {meta.description}
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            <div>
+                              <div style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '11px', marginBottom: '4px', color: 'var(--muted-foreground)' }}>
+                                Started
+                              </div>
+                              <div style={{ fontSize: '13px', color: 'var(--text)' }}>
+                                {formatProvisioningTimestamp(selectedRequest.provisioningStartedAt)}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '11px', marginBottom: '4px', color: 'var(--muted-foreground)' }}>
+                                Completed
+                              </div>
+                              <div style={{ fontSize: '13px', color: 'var(--text)' }}>
+                                {formatProvisioningTimestamp(selectedRequest.provisioningCompletedAt)}
+                              </div>
+                            </div>
+                          </div>
+                          {selectedRequest.provisioningError && (
+                            <div style={{ 
+                              marginTop: '12px', 
+                              fontSize: '12px', 
+                              color: 'var(--danger)', 
+                              backgroundColor: 'var(--danger-bg)', 
+                              border: '1px solid var(--danger-border)',
+                              borderRadius: '8px',
+                              padding: '12px',
+                              display: 'flex',
+                              gap: '8px',
+                              alignItems: 'flex-start'
+                            }}>
+                              <AlertTriangle className="w-4 h-4" strokeWidth={2.5} />
+                              <div>
+                                <div style={{ fontWeight: 600 }}>Connector error</div>
+                                <div style={{ color: 'var(--danger)' }}>{selectedRequest.provisioningError}</div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </Card>
+
                     {/* Risk Panel */}
                     <Card style={{ 
                       padding: '16px', 
@@ -1171,7 +1465,7 @@ export function RequestsPage() {
                         padding: '2px 8px',
                         borderRadius: '6px'
                       }}>
-                        {requests.filter(r => r.status === status).length}
+                        {combinedRequests.filter(r => r.status === status).length}
                       </Badge>
                     </Label>
                   </div>
@@ -1223,7 +1517,7 @@ export function RequestsPage() {
                         padding: '2px 8px',
                         borderRadius: '6px'
                       }}>
-                        {requests.filter(r => r.risk === risk).length}
+                        {combinedRequests.filter(r => r.risk === risk).length}
                       </Badge>
                     </Label>
                   </div>
@@ -1272,7 +1566,7 @@ export function RequestsPage() {
                         padding: '2px 8px',
                         borderRadius: '6px'
                       }}>
-                        {requests.filter(r => r.department === dept).length}
+                        {combinedRequests.filter(r => r.department === dept).length}
                       </Badge>
                     </Label>
                   </div>

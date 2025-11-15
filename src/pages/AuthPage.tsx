@@ -59,6 +59,12 @@ export default function AuthPage() {
     setError(null);
     setLoading(true);
     try {
+      // Dev-only bypass to enable local E2E without verified email
+      if (import.meta.env.VITE_DEV_AUTH_BYPASS === 'true') {
+        localStorage.setItem('devAuthed', '1');
+        navigate('/');
+        return;
+      }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (data.session?.user) await ensureUser(email, data.session.user.id);

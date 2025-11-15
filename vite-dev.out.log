@@ -1,12 +1,23 @@
 
-  VITE v6.3.5  ready in 386 ms
+  VITE v6.3.5  ready in 404 ms
 
   ➜  Local:   http://127.0.0.1:5173/
-15:23:42 [vite] (client) hmr update /src/contexts/ApprovalsContext.tsx
-15:23:42 [vite] (client) hmr invalidate /src/contexts/ApprovalsContext.tsx Could not Fast Refresh ("useApprovals" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc#consistent-components-exports
-15:23:42 [vite] (client) hmr update /src/App.tsx, /src/pages/ApprovalsPage.tsx, /src/components/NewRequestDialog.tsx
-15:23:51 [vite] (client) hmr update /src/contexts/ApprovalsContext.tsx
-15:23:52 [vite] (client) hmr invalidate /src/contexts/ApprovalsContext.tsx Could not Fast Refresh ("useApprovals" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react-swc#consistent-components-exports
-15:23:52 [vite] (client) hmr update /src/App.tsx, /src/pages/ApprovalsPage.tsx, /src/components/NewRequestDialog.tsx
-15:26:41 [vite] (client) hmr update /src/components/NewRequestDialog.tsx
-15:26:49 [vite] (client) hmr update /src/components/NewRequestDialog.tsx
+21:19:32 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+21:19:32 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+21:19:40 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+21:19:50 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+21:20:03 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+21:20:10 [vite] (client) hmr update /src/pages/ApprovalsPage.tsx
+22:30:30 [vite] (client) hmr update /src/components/AppShell.tsx
+22:30:47 [vite] (client) hmr update /src/components/AppShell.tsx
+22:31:11 [vite] (client) hmr update /src/components/AppShell.tsx
+22:31:20 [vite] (client) hmr update /src/components/AppShell.tsx
+22:32:16 [vite] (client) hmr update /src/components/AppShell.tsx
+22:32:26 [vite] (client) hmr update /src/components/AppShell.tsx
+22:36:07 [vite] (client) hmr update /src/components/AppShell.tsx
+22:36:27 [vite] (client) hmr update /src/components/AppShell.tsx
+22:36:51 [vite] (client) hmr update /src/components/AppShell.tsx
+22:36:51 [vite] (client) hmr update /src/components/AppShell.tsx
+22:37:01 [vite] (client) hmr update /src/components/AppShell.tsx
+22:38:07 [vite] (client) hmr update /src/components/AppShell.tsx
+22:38:12 [vite] (client) hmr update /src/components/AppShell.tsx

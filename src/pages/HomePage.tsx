@@ -11,6 +11,8 @@ import { useUser } from '../contexts/UserContext';
 import { EndUserDashboard } from './home/EndUserDashboard';
 import { ApproverDashboard } from './home/ApproverDashboard';
 import { toast } from 'sonner';
+import { AnomalyAlerts } from '../components/AnomalyAlerts';
+import { RiskScoringService } from '../services/ai';
 
 const requestsData = [
   { day: 'Day 1', requests: 12 },
@@ -78,6 +80,22 @@ const tasks = [
 export function HomePage() {
   const { user } = useUser();
   const [showAlert, setShowAlert] = React.useState(true);
+  // AI: Load organization risk stats
+const [orgRiskStats, setOrgRiskStats] = React.useState<any>(null);
+
+React.useEffect(() => {
+  const loadAIInsights = async () => {
+    if (user.organizationId) {
+      try {
+        const stats = await RiskScoringService.getOrganizationRiskStats(user.organizationId);
+        setOrgRiskStats(stats);
+      } catch (error) {
+        console.error('Error loading AI insights:', error);
+      }
+    }
+  };
+  loadAIInsights();
+}, [user.organizationId]);
 
   // Add keyboard shortcut for command palette
   useEffect(() => {
@@ -196,8 +214,8 @@ export function HomePage() {
         />
         <StatCard
           title="High-Risk Alerts"
-          value={7}
-          change="+2 this week"
+          value={orgRiskStats?.highRiskCount || 7}
+          change={orgRiskStats ? `${orgRiskStats.criticalRiskCount} critical` : "+2 this week"}
           changeType="negative"
           trend="up"
           icon={AlertTriangle}
@@ -398,7 +416,13 @@ export function HomePage() {
 
         {/* AI Insights - Right Rail */}
         <div className="lg:col-span-1">
-          <AIPanel suggestions={aiSuggestions} />
+          <AnomalyAlerts
+		    organizationId={user.organizationId}
+			limit={5}
+			onReview={(id, isFalse) => {
+				toast.success(isFalse ? 'Marked as false positive' : 'Confirmed threat');
+			}}
+			/>
         </div>
       </div>
 

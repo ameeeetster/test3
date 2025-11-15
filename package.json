@@ -66,6 +66,7 @@
       "scripts": {
             "dev": "vite",
             "build": "vite build",
+            "preview": "vite preview --host --port 3000",
             "test": "vitest",
             "test:ui": "vitest --ui",
             "test:coverage": "vitest --coverage",
@@ -73,6 +74,9 @@
             "test:e2e:ui": "playwright test --ui",
             "test:a11y": "playwright test --grep @a11y",
             "test:perf": "lighthouse http://localhost:3000 --output json --output-path ./test-results/lighthouse.json",
-            "test:all": "npm run test:coverage && npm run test:e2e"
+            "test:all": "npm run test:coverage && npm run test:e2e",
+            "start:dev:pm2": "pm2 start pm2.config.cjs --only iam-iga-dev --update-env && pm2 save",
+            "start:preview:pm2": "pm2 start pm2.config.cjs --only iam-iga-preview --update-env && pm2 save",
+            "stop:pm2": "pm2 stop iam-iga-dev iam-iga-preview || true"
       }
 }

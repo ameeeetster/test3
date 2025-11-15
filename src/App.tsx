@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import AuthPage from './pages/AuthPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import RegisterPage from './pages/RegisterPage';
 import { ProtectedLayout } from './components/ProtectedLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -14,6 +15,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { Toaster } from './components/ui/sonner';
 import { UserProvider } from './contexts/UserContext';
 import { AuthProvider } from './contexts/AuthProvider';
+import { AITestPage } from './pages/AITestPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { AccessPage } from './pages/AccessPage';
 import { RoleDetailPage } from './pages/RoleDetailPage';
@@ -45,6 +47,7 @@ export default function App() {
             <Routes>
               {/* Public */}
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
@@ -83,6 +86,7 @@ export default function App() {
                 <Route path="/test-connection" element={<SupabaseConnectionTest />} />
                 {/* Test identities Edge Function */}
                 <Route path="/test-identities" element={<TestIdentitiesPage />} />
+				<Route path="/test-ai" element={<AITestPage />} />
               </Route>
 
               {/* Fallback */}

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Access Requests Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4F46E5;
+            padding-bottom: 12px;
+        }
+        .status {
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #D1FAE5;
+            color: #065F46;
+            border-left: 4px solid #10B981;
+        }
+        .status.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border-left: 4px solid #EF4444;
+        }
+        .status.warning {
+            background: #FEF3C7;
+            color: #92400E;
+            border-left: 4px solid #F59E0B;
+        }
+        button {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+        }
+        button:hover {
+            background: #4338CA;
+        }
+        button:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+        }
+        .results {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .step {
+            margin: 24px 0;
+            padding: 16px;
+            background: #F9FAFB;
+            border-radius: 6px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #4F46E5;
+        }
+        code {
+            background: #E5E7EB;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Supabase Access Requests Diagnostic Tool</h1>
+        
+        <div class="step">
+            <h3>Step 1: Check Connection</h3>
+            <p>First, let's verify your Supabase connection is working.</p>
+            <button onclick="checkConnection()">Test Connection</button>
+            <div id="connection-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Check Table Exists</h3>
+            <p>Verify that the <code>access_requests</code> table exists in your database.</p>
+            <button onclick="checkTableExists()">Check Table</button>
+            <div id="table-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Check Authentication</h3>
+            <p>Verify you're logged in with a valid session.</p>
+            <button onclick="checkAuth()">Check Auth Status</button>
+            <div id="auth-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Test Request Creation</h3>
+            <p>Try creating a test access request to see if it persists.</p>
+            <button onclick="testCreateRequest()">Create Test Request</button>
+            <div id="create-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: List Existing Requests</h3>
+            <p>View all requests currently in the database.</p>
+            <button onclick="listRequests()">List All Requests</button>
+            <div id="list-status"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 6: Check RLS Policies</h3>
+            <p>Verify Row Level Security policies are properly configured.</p>
+            <button onclick="checkRLS()">Check RLS Policies</button>
+            <div id="rls-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://syhakcccldxfvcuczaol.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5aGFrY2NjbGR4ZnZjdWN6YW9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQ4NzIsImV4cCI6MjA3NjA4MDg3Mn0.6OrFNSpbZws2xRZkAWOjjaHoIP1pjPkP_oSupIkXrqQ';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showResults(elementId, data) {
+            const el = document.getElementById(elementId);
+            const existing = el.querySelector('.results');
+            if (existing) existing.remove();
+            
+            const results = document.createElement('div');
+            results.className = 'results';
+            results.textContent = JSON.stringify(data, null, 2);
+            el.appendChild(results);
+        }
+
+        async function checkConnection() {
+            showStatus('connection-status', '⏳ Testing connection...', 'warning');
+            try {
+                const { data, error } = await supabase.from('organizations').select('count', { count: 'exact', head: true });
+                if (error) throw error;
+                showStatus('connection-status', '✅ Connection successful! Supabase is reachable.', 'success');
+            } catch (error) {
+                showStatus('connection-status', `❌ Connection failed: ${error.message}`, 'error');
+                showResults('connection-status', error);
+            }
+        }
+
+        async function checkTableExists() {
+            showStatus('table-status', '⏳ Checking if access_requests table exists...', 'warning');
+            try {
+                const { data, error } = await supabase
+                    .from('access_requests')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    if (error.code === '42P01') {
+                        showStatus('table-status', 
+                            '❌ Table does NOT exist! You need to apply migration 0030_access_requests.sql', 
+                            'error');
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    showStatus('table-status', '✅ Table exists! access_requests table is ready.', 'success');
+                }
+            } catch (error) {
+                showStatus('table-status', `❌ Error checking table: ${error.message}`, 'error');
+                showResults('table-status', error);
+            }
+        }
+
+        async function checkAuth() {
+            showStatus('auth-status', '⏳ Checking authentication status...', 'warning');
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) throw error;
+                
+                if (!session) {
+                    showStatus('auth-status', 
+                        '⚠️ Not logged in! You need to sign in first at /auth', 
+                        'warning');
+                } else {
+                    showStatus('auth-status', 
+                        `✅ Logged in as: ${session.user.email}<br>User ID: ${session.user.id}<br>Org ID: ${session.user.app_metadata?.organization_id || 'Not set'}`, 
+                        'success');
+                    showResults('auth-status', {
+                        email: session.user.email,
+                        user_id: session.user.id,
+                        organization_id: session.user.app_metadata?.organization_id,
+                        role: session.user.role
+                    });
+                }
+            } catch (error) {
+                showStatus('auth-status', `❌ Auth check failed: ${error.message}`, 'error');
+                showResults('auth-status', error);
+            }
+        }
+
+        async function testCreateRequest() {
+            showStatus('create-status', '⏳ Creating test request...', 'warning');
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    showStatus('create-status', '❌ Please log in first!', 'error');
+                    return;
+                }
+
+                const requestNumber = `REQ-TEST-${Date.now()}`;
+                const payload = {
+                    request_number: requestNumber,
+                    organization_id: session.user.app_metadata?.organization_id || null,
+                    requester_id: session.user.id,
+                    resource_type: 'Application',
+                    resource_name: 'Test Application - Diagnostic',
+                    status: 'PENDING',
+                    business_justification: 'This is a test request created by the diagnostic tool',
+                    risk_level: 'Low',
+                    sod_conflicts_count: 0
+                };
+
+                const { data, error } = await supabase
+                    .from('access_requests')
+                    .insert(payload)
+                    .select('*')
+                    .single();
+
+                if (error) throw error;
+
+                showStatus('create-status', 
+                    `✅ Test request created successfully!<br>Request ID: ${data.id}<br>Request Number: ${data.request_number}`, 
+                    'success');
+                showResults('create-status', data);
+            } catch (error) {
+                showStatus('create-status', `❌ Failed to create request: ${error.message}`, 'error');
+                showResults('create-status', error);
+            }
+        }
+
+        async function listRequests() {
+            showStatus('list-status', '⏳ Loading requests...', 'warning');
+            try {
+                const { data, error } = await supabase
+                    .from('access_requests')
+                    .select('*')
+                    .order('submitted_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    showStatus('list-status', '⚠️ No requests found in database. Try creating one!', 'warning');
+                } else {
+                    showStatus('list-status', 
+                        `✅ Found ${data.length} request(s) in database`, 
+                        'success');
+                }
+                showResults('list-status', data);
+            } catch (error) {
+                showStatus('list-status', `❌ Failed to list requests: ${error.message}`, 'error');
+                showResults('list-status', error);
+            }
+        }
+
+        async function checkRLS() {
+            showStatus('rls-status', '⏳ Checking RLS policies...', 'warning');
+            try {
+                // Try to query without auth context
+                const { data, error } = await supabase
+                    .from('access_requests')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    showStatus('rls-status', 
+                        `⚠️ RLS may be configured. Error: ${error.message}`, 
+                        'warning');
+                } else {
+                    showStatus('rls-status', 
+                        '✅ RLS policies appear to be working. Authenticated users can access data.', 
+                        'success');
+                }
+            } catch (error) {
+                showStatus('rls-status', `❌ RLS check failed: ${error.message}`, 'error');
+                showResults('rls-status', error);
+            }
+        }
+
+        // Auto-run connection check on load
+        window.addEventListener('load', () => {
+            checkConnection();
+        });
+    </script>
+</body>
+</html>
