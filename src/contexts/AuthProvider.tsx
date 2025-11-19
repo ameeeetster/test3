@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 type Membership = { org_id: string; role: 'org_admin' | 'member' };
@@ -22,37 +22,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const syncTokenRef = useRef(0);
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session?.user) {
-        await bootstrap(data.session.user.id);
-      }
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, newSession) => {
-      setSession(newSession);
-    });
+    mountedRef.current = true;
     return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
+      mountedRef.current = false;
     };
   }, []);
 
-  async function bootstrap(userId: string) {
+  const resetAuthState = useCallback(() => {
+    if (!mountedRef.current) return;
+    setProfile(null);
+    setMemberships([]);
+    setActiveOrgId(null);
+    localStorage.removeItem('activeOrgId');
+  }, []);
+
+  const bootstrap = useCallback(async (userId: string) => {
     const [{ data: prof }, { data: uo }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('user_orgs').select('org_id, role').eq('user_id', userId).eq('is_active', true),
     ]);
-    setProfile(prof || null);
-    setMemberships((uo || []) as Membership[]);
+    const membershipsData = (uo || []) as Membership[];
     const stored = localStorage.getItem('activeOrgId');
-    const initial = stored && (uo || []).some(m => m.org_id === stored) ? stored : (uo && uo[0]?.org_id) || null;
-    setActiveOrgId(initial);
-  }
+    const initial = stored && membershipsData.some(m => m.org_id === stored) ? stored : membershipsData[0]?.org_id || null;
+    return {
+      profile: prof || null,
+      memberships: membershipsData,
+      activeOrgId: initial ?? null,
+    };
+  }, []);
+
+  useEffect(() => {
+    async function syncSession(nextSession: any | null) {
+      if (!mountedRef.current) return;
+      const token = ++syncTokenRef.current;
+      setLoading(true);
+      setSession(nextSession);
+      try {
+        if (nextSession?.user) {
+          const data = await bootstrap(nextSession.user.id);
+          if (!mountedRef.current || syncTokenRef.current !== token) return;
+          setProfile(data.profile);
+          setMemberships(data.memberships);
+          setActiveOrgId(data.activeOrgId);
+        } else {
+          if (!mountedRef.current || syncTokenRef.current !== token) return;
+          resetAuthState();
+        }
+      } finally {
+        if (mountedRef.current && syncTokenRef.current === token) {
+          setLoading(false);
+        }
+      }
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      syncSession(data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, newSession) => {
+      syncSession(newSession);
+    });
+    return () => {
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, [bootstrap, resetAuthState]);
 
   async function setActiveOrg(orgId: string) {
     setActiveOrgId(orgId);
